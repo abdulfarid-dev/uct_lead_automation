@@ -1,0 +1,20 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Lead {
+  id                    Int      @id @default(autoincrement())
+  sector                String
+  website               String   @unique
+  location              String?
+  phone                 String?  @unique
+  email                 String?  @unique
+  googleBusinessProfile String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
