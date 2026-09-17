@@ -21,60 +21,74 @@ export default function LoginPage() {
 
     const DEMO_ID = "uct123";
     const DEMO_PASSWORD = "uct@123";
-if (
-  userId.trim() === DEMO_ID &&
-  password === DEMO_PASSWORD
-) {
-  setError("");
 
-  window.location.href = "/dashboard";
-
-  return;
-}
+    if (userId.trim() === DEMO_ID && password === DEMO_PASSWORD) {
+      setError("");
+      window.location.href = "/dashboard";
+      return;
+    }
 
     setError("Invalid ID or password.");
   }
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-slate-950 text-white">
-      {/* Background */}
-      <div className="pointer-events-none absolute inset-0 overflow-hidden">
-        <div className="absolute -left-40 -top-40 h-96 w-96 rounded-full bg-blue-600/10 blur-3xl" />
+      {/* =====================================================
+          BACKGROUND
+      ====================================================== */}
+     {/* Background */}
+<div className="pointer-events-none absolute inset-0 overflow-hidden">
 
-        <div className="absolute -bottom-40 -right-40 h-96 w-96 rounded-full bg-cyan-500/10 blur-3xl" />
+  {/* UCT Background Watermark */}
+  <img
+    src="/logo.png"
+    alt=""
+    aria-hidden="true"
+    className="absolute left-1/2 top-1/2 z-0 w-[1300px] -translate-x-1/2 -translate-y-1/2 object-contain opacity-[0.08] brightness-0 invert"
+  />
 
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.08),transparent_35%)]" />
-      </div>
+  {/* Blue Glow */}
+  <div className="absolute -left-40 -top-40 z-10 h-96 w-96 rounded-full bg-blue-600/10 blur-3xl" />
 
-      {/* Main */}
-      <div className="relative flex min-h-screen items-center justify-center px-4 py-10">
+  {/* Cyan Glow */}
+  <div className="absolute -bottom-40 -right-40 z-10 h-96 w-96 rounded-full bg-cyan-500/10 blur-3xl" />
+
+  {/* Radial Gradient */}
+  <div className="absolute inset-0 z-10 bg-[radial-gradient(circle_at_top,rgba(59,130,246,0.08),transparent_35%)]" />
+
+</div>
+
+      {/* =====================================================
+          MAIN CONTENT
+      ====================================================== */}
+      <div className="relative z-10 flex min-h-screen items-center justify-center px-4 py-10">
         <div className="w-full max-w-md">
 
-          {/* Brand */}
-          <div className="mb-7 text-center">
-            {/* Temporary UCT Logo */}
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl border border-blue-500/20 bg-blue-600/10 shadow-lg shadow-blue-900/20">
-              <span className="text-xl font-bold tracking-tight text-blue-400">
-                UCT
-              </span>
-            </div>
+          {/* =================================================
+              UCT BRAND
+          ================================================== */}
+          <div className="mb-9 text-center">
+            <img
+              src="/logo.png"
+              alt="UniConverge Technologies"
+              className="mx-auto h-28 w-auto max-w-[320px] object-contain"
+            />
 
-            <h1 className="text-lg font-semibold tracking-tight text-white">
-              UniConverge Technologies
-            </h1>
-
-            <p className="mt-1 text-xs text-slate-500">
+            <p className="mt-3 text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
               Internal Lead Research Portal
             </p>
           </div>
 
-          {/* Login Card */}
+          {/* =================================================
+              LOGIN CARD
+          ================================================== */}
           <div className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/90 shadow-2xl shadow-black/30 backdrop-blur-xl">
 
             {/* Card Header */}
             <div className="border-b border-slate-800 px-6 py-5">
               <div className="flex items-center gap-3">
 
+                {/* Security Icon */}
                 <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-800">
                   <ShieldCheck
                     size={17}
@@ -82,6 +96,7 @@ if (
                   />
                 </div>
 
+                {/* Header Text */}
                 <div>
                   <h2 className="text-sm font-semibold text-white">
                     Admin Sign In
@@ -95,7 +110,9 @@ if (
               </div>
             </div>
 
-            {/* Form */}
+            {/* =================================================
+                LOGIN FORM
+            ================================================== */}
             <form
               onSubmit={handleSubmit}
               className="space-y-4 px-6 py-6"
@@ -111,6 +128,7 @@ if (
                 </label>
 
                 <div className="relative">
+                  {/* User Icon */}
                   <User
                     size={16}
                     className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-600"
@@ -142,11 +160,14 @@ if (
                 </label>
 
                 <div className="relative">
+
+                  {/* Lock Icon */}
                   <LockKeyhole
                     size={16}
                     className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-600"
                   />
 
+                  {/* Password Input */}
                   <input
                     id="password"
                     type={showPassword ? "text" : "password"}
@@ -165,6 +186,7 @@ if (
                     }`}
                   />
 
+                  {/* Show / Hide Password */}
                   <button
                     type="button"
                     onClick={() =>
@@ -186,7 +208,7 @@ if (
                 </div>
               </div>
 
-              {/* Error */}
+              {/* Error Message */}
               {error && (
                 <div className="rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-2.5">
                   <p className="text-xs text-red-400">
@@ -195,7 +217,7 @@ if (
                 </div>
               )}
 
-              {/* Submit */}
+              {/* Sign In Button */}
               <button
                 type="submit"
                 className="group flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-blue-600 text-sm font-semibold text-white shadow-lg shadow-blue-600/20 transition hover:bg-blue-500 active:scale-[0.99]"
@@ -209,7 +231,9 @@ if (
               </button>
             </form>
 
-            {/* Security Footer */}
+            {/* =================================================
+                SECURITY FOOTER
+            ================================================== */}
             <div className="border-t border-slate-800 bg-slate-950/40 px-6 py-4">
               <div className="flex items-center justify-center gap-2 text-[10px] text-slate-600">
                 <LockKeyhole size={12} />
@@ -221,10 +245,13 @@ if (
             </div>
           </div>
 
-          {/* Copyright */}
+          {/* =================================================
+              COPYRIGHT
+          ================================================== */}
           <p className="mt-5 text-center text-[10px] text-slate-700">
             © {new Date().getFullYear()} UniConverge Technologies
           </p>
+
         </div>
       </div>
     </main>
