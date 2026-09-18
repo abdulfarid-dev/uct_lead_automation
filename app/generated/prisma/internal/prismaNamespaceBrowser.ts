@@ -51,7 +51,9 @@ export const AnyNull = runtime.AnyNull
 
 
 export const ModelName = {
-  Lead: 'Lead'
+  Lead: 'Lead',
+  EmailTemplate: 'EmailTemplate',
+  EmailSender: 'EmailSender'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -78,11 +80,50 @@ export const LeadScalarFieldEnum = {
   phone: 'phone',
   email: 'email',
   googleBusinessProfile: 'googleBusinessProfile',
+  verificationStatus: 'verificationStatus',
+  isVerified: 'isVerified',
+  verifiedAt: 'verifiedAt',
+  emailStatus: 'emailStatus',
+  emailScheduledAt: 'emailScheduledAt',
+  emailSentAt: 'emailSentAt',
+  emailError: 'emailError',
+  emailTemplateId: 'emailTemplateId',
+  emailSenderId: 'emailSenderId',
+  emailTemplateName: 'emailTemplateName',
+  emailSubject: 'emailSubject',
+  emailBody: 'emailBody',
+  emailSenderName: 'emailSenderName',
+  emailSenderAddress: 'emailSenderAddress',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
 } as const
 
 export type LeadScalarFieldEnum = (typeof LeadScalarFieldEnum)[keyof typeof LeadScalarFieldEnum]
+
+
+export const EmailTemplateScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  subject: 'subject',
+  body: 'body',
+  isActive: 'isActive',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type EmailTemplateScalarFieldEnum = (typeof EmailTemplateScalarFieldEnum)[keyof typeof EmailTemplateScalarFieldEnum]
+
+
+export const EmailSenderScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  email: 'email',
+  isActive: 'isActive',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type EmailSenderScalarFieldEnum = (typeof EmailSenderScalarFieldEnum)[keyof typeof EmailSenderScalarFieldEnum]
 
 
 export const SortOrder = {

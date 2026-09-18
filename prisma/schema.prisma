@@ -8,13 +8,72 @@ datasource db {
 }
 
 model Lead {
-  id                    Int      @id @default(autoincrement())
+  id                    Int       @id @default(autoincrement())
   sector                String
-  website               String   @unique
+  website               String    @unique
   location              String?
-  phone                 String?  @unique
-  email                 String?  @unique
+  phone                 String?   @unique
+  email                 String?   @unique
   googleBusinessProfile String?
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
+
+  verificationStatus    String    @default("under_review")
+  isVerified            Boolean   @default(false)
+  verifiedAt            DateTime?
+
+  emailStatus           String    @default("pending")
+  emailScheduledAt      DateTime?
+  emailSentAt           DateTime?
+  emailError            String?
+
+  emailTemplateId       Int?
+  emailSenderId         Int?
+  emailTemplateName     String?
+  emailSubject          String?
+  emailBody             String?
+  emailSenderName       String?
+  emailSenderAddress    String?
+
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+
+  emailTemplate         EmailTemplate? @relation(
+    fields: [emailTemplateId],
+    references: [id],
+    onDelete: SetNull
+  )
+
+  emailSender           EmailSender? @relation(
+    fields: [emailSenderId],
+    references: [id],
+    onDelete: SetNull
+  )
+
+  @@index([emailStatus])
+  @@index([emailScheduledAt])
+  @@index([verificationStatus])
+}
+
+model EmailTemplate {
+  id          Int       @id @default(autoincrement())
+  name        String    @unique
+  subject     String
+  body        String
+  isActive    Boolean   @default(true)
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  leads       Lead[]
+}
+
+model EmailSender {
+  id          Int       @id @default(autoincrement())
+  name        String
+  email       String    @unique
+  isActive    Boolean   @default(true)
+
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  leads       Lead[]
 }

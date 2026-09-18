@@ -20,16 +20,26 @@ const quickFilters = [
   "Agriculture",
 ];
 
+// Research target options
+// 5, 10, 20, 30 ... 100
+const RESEARCH_LIMIT_OPTIONS = [
+  5,
+  ...Array.from({ length: 10 }, (_, index) => (index + 1) * 10),
+];
+
 interface ResearchFormProps {
   onResearchStart?: () => void;
+
   onResearchActivity?: (activity: {
     type: "info" | "success" | "warning" | "error";
     message: string;
   }) => void;
+
   onResearchComplete?: (data: {
     leadsFound: number;
     totalLeads?: number;
   }) => void;
+
   onResearchError?: (message: string) => void;
 }
 
@@ -40,7 +50,7 @@ export default function ResearchForm({
   onResearchError,
 }: ResearchFormProps) {
   const [prompt, setPrompt] = useState(defaultPrompt);
-  const [limit, setLimit] = useState(10);
+  const [limit, setLimit] = useState(5);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -56,6 +66,7 @@ export default function ResearchForm({
 
     setLoading(true);
     setMessage("");
+
     onResearchStart?.();
 
     try {
@@ -71,49 +82,79 @@ export default function ResearchForm({
       });
 
       if (!response.ok) {
-        let errorMessage = "Research could not be started.";
+        let errorMessage =
+          "Research could not be started.";
 
         try {
           const data = await response.json();
-          errorMessage = data.error || errorMessage;
+
+          errorMessage =
+            data.error || errorMessage;
         } catch {
-          // Keep the default error message.
+          // Keep default error message.
         }
 
         throw new Error(errorMessage);
       }
 
       if (!response.body) {
-        throw new Error("Research stream is not available.");
+        throw new Error(
+          "Research stream is not available."
+        );
       }
 
-      const reader = response.body.getReader();
-      const decoder = new TextDecoder();
+      const reader =
+        response.body.getReader();
+
+      const decoder =
+        new TextDecoder();
 
       let buffer = "";
 
       while (true) {
-        const { value, done } = await reader.read();
+        const { value, done } =
+          await reader.read();
 
         if (done) break;
 
-        buffer += decoder.decode(value, { stream: true });
+        buffer += decoder.decode(
+          value,
+          { stream: true }
+        );
 
-        const messages = buffer.split("\n\n");
-        buffer = messages.pop() ?? "";
+        const messages =
+          buffer.split("\n\n");
 
-        for (const rawMessage of messages) {
-          const dataLine = rawMessage
-            .split("\n")
-            .find((line) => line.startsWith("data: "));
+        buffer =
+          messages.pop() ?? "";
+
+        for (
+          const rawMessage of messages
+        ) {
+          const dataLine =
+            rawMessage
+              .split("\n")
+              .find((line) =>
+                line.startsWith(
+                  "data: "
+                )
+              );
 
           if (!dataLine) continue;
 
           try {
-            const payload = JSON.parse(dataLine.slice(6));
+            const payload =
+              JSON.parse(
+                dataLine.slice(6)
+              );
 
-            if (payload.type === "activity" && payload.event) {
-              const event = payload.event;
+            if (
+              payload.type ===
+                "activity" &&
+              payload.event
+            ) {
+              const event =
+                payload.event;
 
               let activityType:
                 | "info"
@@ -121,27 +162,48 @@ export default function ResearchForm({
                 | "warning"
                 | "error" = "info";
 
-              if (event.type === "success") {
-                activityType = "success";
-              } else if (
-                event.type === "rejected" ||
-                event.type === "skipped"
+              if (
+                event.type ===
+                "success"
               ) {
-                activityType = "warning";
-              } else if (event.type === "error") {
-                activityType = "error";
+                activityType =
+                  "success";
+              } else if (
+                event.type ===
+                  "rejected" ||
+                event.type ===
+                  "skipped"
+              ) {
+                activityType =
+                  "warning";
+              } else if (
+                event.type ===
+                "error"
+              ) {
+                activityType =
+                  "error";
               }
 
               onResearchActivity?.({
                 type: activityType,
-                message: event.message,
+                message:
+                  event.message,
               });
             }
 
-            if (payload.type === "complete") {
-              const leadsFound = Number(payload.leadsFound ?? 0);
+            if (
+              payload.type ===
+              "complete"
+            ) {
+              const leadsFound =
+                Number(
+                  payload.leadsFound ??
+                    0
+                );
+
               const totalLeads =
-                typeof payload.totalLeads === "number"
+                typeof payload.totalLeads ===
+                "number"
                   ? payload.totalLeads
                   : undefined;
 
@@ -155,14 +217,25 @@ export default function ResearchForm({
               });
             }
 
-            if (payload.type === "error") {
+            if (
+              payload.type ===
+              "error"
+            ) {
               throw new Error(
-                payload.message || "Research could not be completed."
+                payload.message ||
+                  "Research could not be completed."
               );
             }
           } catch (error) {
-            if (error instanceof SyntaxError) {
-              console.error("Invalid research stream event:", error);
+            if (
+              error instanceof
+              SyntaxError
+            ) {
+              console.error(
+                "Invalid research stream event:",
+                error
+              );
+
               continue;
             }
 
@@ -177,15 +250,22 @@ export default function ResearchForm({
           : "Something went wrong.";
 
       setMessage(errorMessage);
-      onResearchError?.(errorMessage);
+
+      onResearchError?.(
+        errorMessage
+      );
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <form
+      onSubmit={handleSubmit}
+      className="space-y-5"
+    >
       {/* Research Prompt */}
+
       <section className="rounded-2xl border border-slate-800 bg-slate-900/80 p-5 shadow-xl shadow-black/10">
         <div className="mb-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -199,7 +279,8 @@ export default function ResearchForm({
               </h2>
 
               <p className="mt-0.5 text-xs text-slate-500">
-                Tell the system what type of businesses UCT should research.
+                Tell the system what type of
+                businesses UCT should research.
               </p>
             </div>
           </div>
@@ -223,7 +304,9 @@ export default function ResearchForm({
             id="research-prompt"
             value={prompt}
             onChange={(event) =>
-              setPrompt(event.target.value)
+              setPrompt(
+                event.target.value
+              )
             }
             rows={5}
             disabled={loading}
@@ -232,26 +315,33 @@ export default function ResearchForm({
         </div>
 
         {/* Controls */}
+
         <div className="mt-4 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
           {/* Filters */}
+
           <div className="flex flex-wrap gap-2">
-            {quickFilters.map((filter) => (
-              <button
-                key={filter}
-                type="button"
-                disabled={loading}
-                onClick={() => {
-                  setPrompt((current) =>
-                    current.includes(filter)
-                      ? current
-                      : `${current}\nFocus additionally on ${filter} businesses.`
-                  );
-                }}
-                className="rounded-full border border-slate-700 bg-slate-950 px-3 py-1.5 text-[11px] font-medium text-slate-300 transition hover:border-blue-500/50 hover:bg-blue-500/10 hover:text-blue-300 disabled:opacity-50"
-              >
-                {filter}
-              </button>
-            ))}
+            {quickFilters.map(
+              (filter) => (
+                <button
+                  key={filter}
+                  type="button"
+                  disabled={loading}
+                  onClick={() => {
+                    setPrompt(
+                      (current) =>
+                        current.includes(
+                          filter
+                        )
+                          ? current
+                          : `${current}\nFocus additionally on ${filter} businesses.`
+                    );
+                  }}
+                  className="rounded-full border border-slate-700 bg-slate-950 px-3 py-1.5 text-[11px] font-medium text-slate-300 transition hover:border-blue-500/50 hover:bg-blue-500/10 hover:text-blue-300 disabled:opacity-50"
+                >
+                  {filter}
+                </button>
+              )
+            )}
 
             <button
               type="button"
@@ -264,8 +354,10 @@ export default function ResearchForm({
           </div>
 
           {/* Right Controls */}
+
           <div className="flex items-center gap-3">
             {/* Research Limit */}
+
             <div className="flex items-center gap-2 rounded-xl border border-slate-700 bg-slate-950 px-3.5 py-2.5">
               <span className="text-xs font-medium text-slate-400">
                 Limit
@@ -274,19 +366,30 @@ export default function ResearchForm({
               <select
                 value={limit}
                 onChange={(event) =>
-                  setLimit(Number(event.target.value))
+                  setLimit(
+                    Number(
+                      event.target.value
+                    )
+                  )
                 }
                 disabled={loading}
                 className="bg-transparent text-xs font-semibold text-slate-200 outline-none disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <option value={10}>10</option>
-                <option value={25}>25</option>
-                <option value={50}>50</option>
-                <option value={100}>100</option>
+                {RESEARCH_LIMIT_OPTIONS.map(
+                  (value) => (
+                    <option
+                      key={value}
+                      value={value}
+                    >
+                      {value}
+                    </option>
+                  )
+                )}
               </select>
             </div>
 
             {/* Location */}
+
             <button
               type="button"
               disabled={loading}
@@ -297,6 +400,7 @@ export default function ResearchForm({
                   size={15}
                   className="text-slate-400"
                 />
+
                 India
               </span>
 
@@ -306,6 +410,7 @@ export default function ResearchForm({
             </button>
 
             {/* Start Research */}
+
             <button
               type="submit"
               disabled={loading}
@@ -324,6 +429,7 @@ export default function ResearchForm({
         </div>
 
         {/* Result Message */}
+
         {message && (
           <div className="mt-4 rounded-xl border border-slate-800 bg-slate-950 px-4 py-3 text-xs text-slate-400">
             {message}

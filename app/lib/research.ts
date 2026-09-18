@@ -786,27 +786,163 @@ function isPotentialUCTCustomer(text: string): boolean {
   const providerScore = calculateProviderScore(text);
   const negativeScore = calculateNegativeScore(text);
 
-  // V10: these organization types are never treated as end-user prospects.
-  // This prevents agencies such as renewable-energy development bodies from
-  // passing simply because the page contains strong solar/energy keywords.
+  const strongPhysicalOperations = hasStrongPhysicalOperations(text);
+  const explicitEndUser = hasExplicitIndustrialEndUserIdentity(text);
+
+  /*
+   * HARD REJECT
+   *
+   * Only organization types that are clearly not commercial prospects
+   * should be rejected here.
+   */
   if (hasHardRejectOrganizationType(text)) return false;
 
-  // Associations/research organizations are rejected unless the text clearly
-  // describes the organization itself operating a physical facility.
-  if (hasNonCustomerOrganizationType(text) && !hasStrongPhysicalOperations(text)) return false;
+  /*
+   * INFORMATION / RESEARCH / ASSOCIATION
+   *
+   * These are rejected unless the organization itself clearly operates
+   * a physical facility.
+   */
+  if (
+    hasNonCustomerOrganizationType(text) &&
+    !strongPhysicalOperations &&
+    !explicitEndUser
+  ) {
+    return false;
+  }
 
-  // V10: a technology provider/competitor is not a customer merely because it
-  // also mentions factories, sensors, automation or industrial customers.
-  if (hasCompetitorPrimaryBusiness(text) && !hasExplicitIndustrialEndUserIdentity(text)) return false;
+  /*
+   * COMPETITOR / TECHNOLOGY PROVIDER
+   *
+   * A company can contain provider/technology language and still be
+   * a genuine UCT prospect if it operates factories, plants, warehouses,
+   * fleets, utilities, solar assets, etc.
+   */
+  if (
+    hasCompetitorPrimaryBusiness(text) &&
+    !strongPhysicalOperations &&
+    !explicitEndUser
+  ) {
+    return false;
+  }
 
-  if (providerScore >= 2 && customerScore < 14) return false;
-  if (negativeScore >= 2 && customerScore < 12) return false;
+  /*
+   * PROVIDER SCORE
+   *
+   * Provider language alone must never reject a real physical operator.
+   */
+  if (
+    providerScore >= 2 &&
+    customerScore < 14 &&
+    !strongPhysicalOperations &&
+    !explicitEndUser
+  ) {
+    return false;
+  }
 
-  // Require both meaningful customer evidence and at least one explicit
-  // end-user/physical-operations signal. This removes research pages and
-  // generic industrial-content sites that happen to contain keywords.
-  if (customerScore < 8) return false;
-  return hasExplicitIndustrialEndUserIdentity(text) || hasStrongPhysicalOperations(text);
+  /*
+   * NEGATIVE SIGNALS
+   *
+   * Negative signals can reject generic/non-customer pages, but physical
+   * operators get priority.
+   */
+  if (
+    negativeScore >= 2 &&
+    customerScore < 12 &&
+    !strongPhysicalOperations &&
+    !explicitEndUser
+  ) {
+    return false;
+  }
+
+  /*
+   * Minimum customer evidence.
+   *
+   * A clear factory/plant/warehouse/fleet/operator is already strong
+   * customer evidence, even if the website uses different terminology.
+   */
+  if (
+    customerScore < 8 &&
+    !strongPhysicalOperations &&
+    !explicitEndUser
+  ) {
+    return false;
+  }
+
+  return (
+    strongPhysicalOperations ||
+    explicitEndUser ||
+    customerScore >= 8
+  );
+}
+
+function getCustomerRejectionReason(text: string): string {
+  const customerScore = calculateCustomerScore(text);
+  const providerScore = calculateProviderScore(text);
+  const negativeScore = calculateNegativeScore(text);
+
+  const strongPhysicalOperations = hasStrongPhysicalOperations(text);
+  const explicitEndUser = hasExplicitIndustrialEndUserIdentity(text);
+
+  if (hasHardRejectOrganizationType(text)) {
+    return "hard-reject organization type";
+  }
+
+  if (
+    hasNonCustomerOrganizationType(text) &&
+    !strongPhysicalOperations &&
+    !explicitEndUser
+  ) {
+    return "information/research/association organization without physical operation";
+  }
+
+  if (
+    hasCompetitorPrimaryBusiness(text) &&
+    !strongPhysicalOperations &&
+    !explicitEndUser
+  ) {
+    return "technology provider/competitor without clear end-user operation";
+  }
+
+  if (
+    providerScore >= 2 &&
+    customerScore < 14 &&
+    !strongPhysicalOperations &&
+    !explicitEndUser
+  ) {
+    return "provider-heavy website without strong physical operation";
+  }
+
+  if (
+    negativeScore >= 2 &&
+    customerScore < 12 &&
+    !strongPhysicalOperations &&
+    !explicitEndUser
+  ) {
+    return "negative customer signals";
+  }
+
+  if (
+    customerScore < 8 &&
+    !strongPhysicalOperations &&
+    !explicitEndUser
+  ) {
+    return "insufficient customer evidence";
+  }
+
+  return "does not meet UCT customer qualification criteria";
+}
+
+function emitLeadRejected(
+  onEvent: ResearchRunOptions["onEvent"],
+  website: string,
+  reason: string
+): void {
+  emitResearchEvent(
+    onEvent,
+    "rejected",
+    `Lead rejected: ${reason} → ${website}`
+  );
 }
 
 /* =========================================================
@@ -1034,7 +1170,12 @@ function classifySector(text: string): string {
 
 type SectorLead = Omit<ResearchLead, "companyName"> & { sector: string };
 
-async function extractVerifiedCompany(website: string, prompt: string, expectedName?: string): Promise<SectorLead | null> {
+async function extractVerifiedCompany(
+  website: string,
+  prompt: string,
+  expectedName?: string,
+  onEvent?: ResearchRunOptions["onEvent"]
+): Promise<SectorLead | null> {
   if (!isPotentialOfficialWebsite(website)) return null;
 
   try {
@@ -1045,29 +1186,58 @@ async function extractVerifiedCompany(website: string, prompt: string, expectedN
 
     const results = Array.isArray(data?.results) ? data.results : [];
     const websiteText = results.map((result: any) => result?.raw_content || "").filter(Boolean).join("\n");
-    if (!websiteText.trim()) return null;
+    if (!websiteText.trim()) {
+      emitLeadRejected(onEvent, website, "official website returned no usable content");
+      return null;
+    }
 
-    if (isLikelyPublisherOrResearchSite(website, websiteText)) return null;
+    if (isLikelyPublisherOrResearchSite(website, websiteText)) {
+      emitLeadRejected(onEvent, website, "publisher/research/information site");
+      return null;
+    }
 
-    if (!isPotentialUCTCustomer(websiteText)) return null;
-    if (!locationMatchesPrompt(websiteText, prompt)) return null;
+    if (!isPotentialUCTCustomer(websiteText)) {
+      emitLeadRejected(
+        onEvent,
+        website,
+        getCustomerRejectionReason(websiteText)
+      );
+      return null;
+    }
+
+    if (!locationMatchesPrompt(websiteText, prompt)) {
+      emitLeadRejected(onEvent, website, "location does not match requested location");
+      return null;
+    }
 
     // Company identity is used internally for verification only.
     // It is deliberately NOT returned to the research result.
-    if (expectedName && !websiteIdentityMatches(expectedName, website, websiteText)) return null;
-
-    // Reject provider-heavy sites even if a generic industrial keyword happens to appear.
-    const providerScore = calculateProviderScore(websiteText);
-    const customerScore = calculateCustomerScore(websiteText);
-    if (providerScore >= 2 && customerScore < 14) return null;
+    if (
+      expectedName &&
+      !websiteIdentityMatches(expectedName, website, websiteText)
+    ) {
+      emitLeadRejected(onEvent, website, "official company identity could not be verified");
+      return null;
+    }
 
     const email = extractEmail(websiteText, website);
     const phone = extractPhone(websiteText);
     const location = extractLocation(websiteText);
 
-    if (location && !isPlausibleBusinessLocation(location)) return null;
+    if (location && !isPlausibleBusinessLocation(location)) {
+      emitLeadRejected(onEvent, website, "invalid business location");
+      return null;
+    }
 
-    if (!email && !phone) return null;
+    // if (!email && !phone) {
+    //   emitLeadRejected(onEvent, website, "no business email or phone found");
+    //   return null;
+    // }
+
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      emitLeadRejected(onEvent, website, "invalid business email");
+      return null;
+    }
 
     return {
       sector: classifySector(websiteText),
@@ -1345,14 +1515,9 @@ for (const website of websites) {
     `Verifying official website: ${website}`
   );
 
-  const lead = await extractVerifiedCompany(website, prompt);
+  const lead = await extractVerifiedCompany(website, prompt, undefined, options.onEvent);
 
   if (!lead) {
-    emitResearchEvent(
-      options.onEvent,
-      "rejected",
-      `Lead rejected: ${website}`
-    );
     continue;
   }
 
@@ -1377,67 +1542,6 @@ for (const website of websites) {
 }
       
 
-      for (const website of websites) {
-        if (counter.value >= limit) break;
-
-        const normalizedWebsite = normalizeUrl(website).toLowerCase();
-
-        if (seenWebsites.has(normalizedWebsite)) {
-          emitResearchEvent(
-            options.onEvent,
-            "skipped",
-            `Duplicate search result skipped: ${website}`
-          );
-          continue;
-        }
-
-        seenWebsites.add(normalizedWebsite);
-
-        if (isIndia && !isIndiaRelevantWebsite(website)) {
-          emitResearchEvent(
-            options.onEvent,
-            "skipped",
-            `Non-India website skipped: ${website}`
-          );
-          continue;
-        }
-
-        emitResearchEvent(
-          options.onEvent,
-          "check",
-          `Verifying official website: ${website}`
-        );
-
-        const lead = await extractVerifiedCompany(website, prompt);
-
-        if (!lead) {
-          emitResearchEvent(
-            options.onEvent,
-            "rejected",
-            `Lead rejected: ${website}`
-          );
-          continue;
-        }
-
-        if (isKnownLead(lead, knownLeadKeys)) {
-          emitResearchEvent(
-            options.onEvent,
-            "skipped",
-            `Duplicate lead skipped: ${website}`
-          );
-          continue;
-        }
-
-        leads.push(lead);
-        registerLeadKeys(lead, knownLeadKeys);
-        counter.value += 1;
-
-        emitResearchEvent(
-          options.onEvent,
-          "success",
-          `Found ${counter.value} new lead${counter.value === 1 ? "" : "s"}: ${website}`
-        );
-      }
     } catch (error) {
       console.error(`Direct discovery failed for "${query}":`, error);
       emitResearchEvent(
@@ -1520,7 +1624,8 @@ async function directoryDiscovery(prompt: string, options: ResearchRunOptions = 
           const lead = await extractVerifiedCompany(
             officialWebsite,
             prompt,
-            companyName
+            companyName,
+            options.onEvent
           );
 
           if (!lead) {
@@ -1728,14 +1833,9 @@ export async function runResearch(
             `Verifying official website: ${website}`
           );
 
-          const lead = await extractVerifiedCompany(website, job.prompt);
+          const lead = await extractVerifiedCompany(website, job.prompt, undefined, options.onEvent);
 
           if (!lead) {
-            emitResearchEvent(
-              options.onEvent,
-              "rejected",
-              `Lead rejected: ${website}`
-            );
             continue;
           }
 

@@ -7,6 +7,7 @@ import {
   Database,
   LayoutDashboard,
   LogOut,
+  Mail,
   Plus,
   Settings,
 } from "lucide-react";
@@ -37,27 +38,25 @@ export default function Sidebar() {
       {/* =====================================================
           BRAND
       ====================================================== */}
-     {/* Brand */}
-<div className="flex h-16 shrink-0 items-center border-b border-slate-800 px-5">
-  <div className="flex items-center gap-3">
-    <img
-      src="/logo.png"
-      alt="UCT"
-      className="h-20 w-auto object-contain"
-    />
+      <div className="flex h-16 shrink-0 items-center border-b border-slate-800 px-5">
+        <div className="flex items-center gap-3">
+          <img
+            src="/logo.png"
+            alt="UCT"
+            className="h-20 w-auto object-contain"
+          />
 
-    <div>
-      <p className="text-sm font-semibold text-white">
-        UCT
-      </p>
+          <div>
+            <p className="text-sm font-semibold text-white">
+              UCT
+            </p>
 
-      <p className="text-[10px] text-slate-500">
-        Lead Research
-      </p>
-    </div>
-  </div>
-</div>
-
+            <p className="text-[10px] text-slate-500">
+              Lead Research
+            </p>
+          </div>
+        </div>
+      </div>
 
       {/* =====================================================
           NAVIGATION
@@ -127,6 +126,44 @@ export default function Sidebar() {
           />
 
           <span>Add New Lead</span>
+        </Link>
+
+        {/* Email Outreach */}
+        <p className="mb-3 mt-7 px-3 text-[10px] font-semibold uppercase tracking-wider text-slate-600">
+          Email Outreach
+        </p>
+
+        <Link
+          href="/dashboard/email-outreach"
+          className={`group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-xs font-medium transition ${
+            pathname === "/dashboard/email-outreach" ||
+            pathname.startsWith("/dashboard/email-outreach/")
+              ? "bg-blue-600/10 text-blue-400"
+              : "text-slate-400 hover:bg-slate-900 hover:text-slate-200"
+          }`}
+        >
+          {/* Active Indicator */}
+          {(pathname === "/dashboard/email-outreach" ||
+            pathname.startsWith("/dashboard/email-outreach/")) && (
+            <span className="absolute left-0 top-1/2 h-5 w-0.5 -translate-y-1/2 rounded-full bg-blue-400" />
+          )}
+
+          <Mail
+            size={16}
+            className={
+              pathname === "/dashboard/email-outreach" ||
+              pathname.startsWith("/dashboard/email-outreach/")
+                ? "text-blue-400"
+                : "text-slate-500 transition-colors group-hover:text-slate-300"
+            }
+          />
+
+          <span>Email Outreach</span>
+
+          {(pathname === "/dashboard/email-outreach" ||
+            pathname.startsWith("/dashboard/email-outreach/")) && (
+            <span className="ml-auto h-1.5 w-1.5 rounded-full bg-blue-400" />
+          )}
         </Link>
       </nav>
 

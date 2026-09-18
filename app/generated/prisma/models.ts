@@ -9,4 +9,6 @@
  * 🟢 You can import this file directly.
  */
 export type * from './models/Lead'
+export type * from './models/EmailTemplate'
+export type * from './models/EmailSender'
 export type * from './commonInputTypes'

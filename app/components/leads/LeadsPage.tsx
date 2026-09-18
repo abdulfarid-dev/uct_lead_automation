@@ -31,6 +31,7 @@ export interface Lead {
   phone: string;
   email: string;
   googleBusinessProfile: string;
+  verificationStatus: "under_review" | "verified" | "rejected";
 }
 
 type MessageType = "success" | "error" | "info";
@@ -84,6 +85,12 @@ function normalizeLead(value: unknown): Lead {
       typeof lead.googleBusinessProfile === "string"
         ? lead.googleBusinessProfile
         : "",
+
+    verificationStatus:
+      lead.verificationStatus === "verified" ||
+      lead.verificationStatus === "rejected"
+        ? lead.verificationStatus
+        : "under_review",
   };
 }
 
@@ -331,6 +338,82 @@ export default function LeadsPage() {
     }
   }
 
+  async function handleVerificationStatusChange(
+    lead: Lead,
+    status: Lead["verificationStatus"]
+  ) {
+    const previousStatus = lead.verificationStatus;
+
+    if (previousStatus === status) {
+      return;
+    }
+
+    // Optimistic UI update.
+    setLeads((current) =>
+      current.map((item) =>
+        item.id === lead.id
+          ? { ...item, verificationStatus: status }
+          : item
+      )
+    );
+
+    try {
+      const response = await fetch(`/api/leads/${lead.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          verificationStatus: status,
+        }),
+      });
+
+      const data = await readApiResponse(response);
+
+      if (!response.ok) {
+        throw new Error(
+          data.error || "Failed to update verification status."
+        );
+      }
+
+      const updatedLead = data.lead
+        ? normalizeLead(data.lead)
+        : null;
+
+      if (updatedLead) {
+        setLeads((current) =>
+          current.map((item) =>
+            item.id === lead.id ? updatedLead : item
+          )
+        );
+      }
+
+      showMessage(
+        "Verification status updated successfully.",
+        "success"
+      );
+    } catch (error) {
+      // Roll back to the previous status when the API fails.
+      setLeads((current) =>
+        current.map((item) =>
+          item.id === lead.id
+            ? {
+                ...item,
+                verificationStatus: previousStatus,
+              }
+            : item
+        )
+      );
+
+      showMessage(
+        error instanceof Error
+          ? error.message
+          : "Failed to update verification status.",
+        "error"
+      );
+    }
+  }
+
   async function handleDeleteLead(
     lead: Lead
   ) {
@@ -512,7 +595,7 @@ export default function LeadsPage() {
           </div>
         ) : (
           <div className="leads-scroll max-h-[calc(100vh-245px)] min-h-[260px] overflow-auto">
-            <table className="w-full min-w-[1120px] border-collapse text-left">
+            <table className="w-full min-w-[1240px] border-collapse text-left">
               <thead className="sticky top-0 z-30">
                 <tr className="border-b border-slate-800 bg-slate-950">
                   {/* # */}
@@ -545,6 +628,11 @@ export default function LeadsPage() {
                     Location
                   </th>
 
+                  {/* Status */}
+                 <th className="sticky right-[88px] z-40 w-[150px] border-l border-slate-800 bg-slate-950 px-2.5 py-2 text-[9px] font-semibold uppercase tracking-wide text-slate-500">
+  Status
+</th>
+
                   {/* Actions */}
                   <th className="sticky right-0 z-40 w-[88px] border-l border-slate-800 bg-slate-950 px-2.5 py-2 text-right text-[9px] font-semibold uppercase tracking-wide text-slate-500">
                     Actions
@@ -556,7 +644,7 @@ export default function LeadsPage() {
                 {filteredLeads.length === 0 ? (
                   <tr>
                     <td
-                      colSpan={7}
+                      colSpan={8}
                       className="h-[240px] px-4 text-center"
                     >
                       <div className="flex flex-col items-center justify-center gap-2">
@@ -695,6 +783,37 @@ export default function LeadsPage() {
                               {lead.location || "—"}
                             </span>
                           </div>
+                        </td>
+
+                        {/* Status */}
+                        <td className="sticky right-[88px] z-20 w-[150px] border-l border-slate-800/80 bg-slate-900 px-2.5 py-2 group-hover:bg-slate-800/90">
+                          <select
+                            value={lead.verificationStatus}
+                            onChange={(event) =>
+                              void handleVerificationStatusChange(
+                                lead,
+                                event.target.value as Lead["verificationStatus"]
+                              )
+                            }
+                            className={`h-7 w-[132px] rounded-md border bg-slate-950 px-2 text-[10px] font-medium outline-none transition focus:ring-1 ${
+                              lead.verificationStatus === "verified"
+                                ? "border-emerald-500/30 text-emerald-400 focus:border-emerald-500/50 focus:ring-emerald-500/10"
+                                : lead.verificationStatus === "rejected"
+                                  ? "border-red-500/30 text-red-400 focus:border-red-500/50 focus:ring-red-500/10"
+                                  : "border-amber-500/30 text-amber-400 focus:border-amber-500/50 focus:ring-amber-500/10"
+                            }`}
+                            aria-label={`Verification status for ${lead.website || "lead"}`}
+                          >
+                            <option value="under_review">
+                              Under Review
+                            </option>
+                            <option value="verified">
+                              Verified
+                            </option>
+                            <option value="rejected">
+                              Rejected
+                            </option>
+                          </select>
                         </td>
 
                         {/* Actions */}
