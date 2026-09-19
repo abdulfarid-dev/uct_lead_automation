@@ -451,9 +451,11 @@ export async function POST(request: Request) {
     /*
      * SEND NOW
      */
+    
     if (action === "send-now") {
-      const webhookUrl =
-        process.env.N8N_EMAIL_WEBHOOK_URL;
+   const webhookUrl =
+  process.env.N8N_EMAIL_WEBHOOK_URL ||
+  "http://localhost:5678/webhook-test/uct-email";
 
       if (!webhookUrl) {
         return NextResponse.json(

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   CheckCircle2,
   Database,
@@ -36,6 +36,56 @@ const defaultStats: ResearchStats = {
   duplicatesRemoved: 0,
   rejected: 0,
 };
+
+function AnimatedNumber({ value }: { value: number }) {
+  const [displayValue, setDisplayValue] = useState(value);
+  const previousValue = useRef(value);
+
+  useEffect(() => {
+    const startValue = previousValue.current;
+    const endValue = value;
+
+    if (startValue === endValue) return;
+
+    const difference = endValue - startValue;
+    const duration = 300;
+    const startTime = performance.now();
+
+    let animationFrame = 0;
+
+    function animate(currentTime: number) {
+      const progress = Math.min(
+        (currentTime - startTime) / duration,
+        1
+      );
+
+      const easedProgress =
+        1 - Math.pow(1 - progress, 3);
+
+      setDisplayValue(
+        Math.round(
+          startValue + difference * easedProgress
+        )
+      );
+
+      if (progress < 1) {
+        animationFrame =
+          requestAnimationFrame(animate);
+      } else {
+        previousValue.current = endValue;
+      }
+    }
+
+    animationFrame = requestAnimationFrame(animate);
+
+    return () => {
+      cancelAnimationFrame(animationFrame);
+      previousValue.current = endValue;
+    };
+  }, [value]);
+
+  return <>{displayValue}</>;
+}
 
 export default function ResearchStatus({
   stats = defaultStats,
@@ -95,7 +145,7 @@ export default function ResearchStatus({
                   </p>
 
                   <p className="mt-2 text-2xl font-bold tracking-tight text-white">
-                    {stat.value}
+                    <AnimatedNumber value={stat.value} />
                   </p>
                 </div>
 
@@ -116,7 +166,9 @@ export default function ResearchStatus({
             <div className="flex items-center gap-2">
               <span
                 className={`h-2 w-2 rounded-full ${
-                  loading ? "animate-pulse bg-blue-400" : "bg-slate-600"
+                  loading
+                    ? "animate-pulse bg-blue-400"
+                    : "bg-slate-600"
                 }`}
               />
 

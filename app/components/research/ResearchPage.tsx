@@ -72,14 +72,61 @@ export default function ResearchPage() {
     type: "info" | "success" | "warning" | "error";
     message: string;
   }) {
+    const message = activity.message;
+
     setActivities((current) => [
       ...current,
       {
         id: Date.now() + current.length,
         type: activity.type,
-        message: activity.message,
+        message,
       },
     ]);
+
+    /*
+     * IMPORTANT:
+     * Only successful "Found X new lead(s)" events increase
+     * the live database counter.
+     *
+     * The backend emits this event only after the lead has
+     * been successfully saved to PostgreSQL.
+     */
+    if (
+      activity.type === "success" &&
+      /^Found \d+ new lead(s)?:/i.test(message)
+    ) {
+      setStats((current) => ({
+        ...current,
+        totalLeads: current.totalLeads + 1,
+        lastResearch: current.lastResearch + 1,
+      }));
+
+      return;
+    }
+
+    /*
+     * Rejected and skipped leads are intentionally kept only
+     * in frontend state. They are NOT stored in the database.
+     */
+    if (
+      activity.type === "warning" &&
+      /^SKIPPED|^Duplicate lead skipped|^Lead rejected|^REJECTED/i.test(
+        message
+      )
+    ) {
+      const isRejected =
+        /^Lead rejected|^REJECTED/i.test(message);
+
+      setStats((current) => ({
+        ...current,
+        rejected: isRejected
+          ? current.rejected + 1
+          : current.rejected,
+        duplicatesRemoved: isRejected
+          ? current.duplicatesRemoved
+          : current.duplicatesRemoved + 1,
+      }));
+    }
   }
 
   function handleResearchComplete(data: {
@@ -90,11 +137,18 @@ export default function ResearchPage() {
 
     setStats((current) => ({
       ...current,
+      /*
+       * Do not overwrite the live counter with an old value.
+       * The counter has already been updated lead-by-lead.
+       *
+       * If the API sends the final DB total, use it only as
+       * a final synchronization point.
+       */
       totalLeads:
         typeof data.totalLeads === "number"
           ? data.totalLeads
           : current.totalLeads,
-      lastResearch: data.leadsFound,
+      lastResearch: current.lastResearch,
     }));
 
     setActivities((current) => [

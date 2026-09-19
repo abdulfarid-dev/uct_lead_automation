@@ -57,7 +57,7 @@ function createLeadKeySets(leads: ResearchLead[]): LeadKeySets {
   };
 
   for (const lead of leads) {
-    const website = normalizeUrl(lead.website).toLowerCase();
+    const website = normalizeDomainKey(lead.website);
     const phone = lead.phone.replace(/\D/g, "");
     const email = lead.email.trim().toLowerCase();
 
@@ -70,7 +70,7 @@ function createLeadKeySets(leads: ResearchLead[]): LeadKeySets {
 }
 
 function isKnownLead(lead: SectorLead, keys: LeadKeySets): boolean {
-  const website = normalizeUrl(lead.website).toLowerCase();
+  const website = normalizeDomainKey(lead.website);
   const phone = lead.phone.replace(/\D/g, "");
   const email = lead.email.trim().toLowerCase();
 
@@ -81,7 +81,7 @@ function isKnownLead(lead: SectorLead, keys: LeadKeySets): boolean {
   );
 }
 function registerLeadKeys(lead: SectorLead, keys: LeadKeySets): void {
-  const website = normalizeUrl(lead.website).toLowerCase();
+  const website = normalizeDomainKey(lead.website);
   const phone = lead.phone.replace(/\D/g, "");
   const email = lead.email.trim().toLowerCase();
 
@@ -414,6 +414,24 @@ function normalizeUrl(url: string): string {
     parsed.search = "";
     return parsed.toString().replace(/\/$/, "");
   } catch { return url; }
+}
+
+function normalizeDomainKey(url: string): string {
+  try {
+    const hostname = new URL(url).hostname
+      .toLowerCase()
+      .replace(/^www\./, "")
+      .trim();
+
+    return hostname;
+  } catch {
+    return normalizeUrl(url)
+      .toLowerCase()
+      .replace(/^https?:\/\//, "")
+      .replace(/^www\./, "")
+      .split("/")[0]
+      .trim();
+  }
 }
 
 function isDirectoryDomain(url: string): boolean {
@@ -945,6 +963,44 @@ function emitLeadRejected(
   );
 }
 
+
+async function saveVerifiedLeadImmediately(
+  lead: SectorLead,
+  onEvent: ResearchRunOptions["onEvent"],
+  websiteForMessage: string
+): Promise<boolean> {
+  try {
+    const saveResult = await addLeads([
+      lead as unknown as ResearchLead,
+    ]);
+
+    const saved = Number(saveResult?.saved || 0);
+    const duplicates = Number(saveResult?.duplicates || 0);
+
+    if (saved > 0) {
+      return true;
+    }
+
+    emitResearchEvent(
+      onEvent,
+      "skipped",
+      `Lead was not saved${duplicates > 0 ? " (duplicate)" : ""}: ${websiteForMessage}`
+    );
+
+    return false;
+  } catch (error) {
+    console.error(`Immediate lead save failed for ${websiteForMessage}:`, error);
+
+    emitResearchEvent(
+      onEvent,
+      "error",
+      `Database save failed: ${websiteForMessage}`
+    );
+
+    return false;
+  }
+}
+
 /* =========================================================
    9. LOCATION PARSING
 ========================================================= */
@@ -1390,25 +1446,6 @@ function isPotentialCustomerText(text: string): boolean {
     .some((signal) => value.includes(signal));
 }
 
-function isIndiaRelevantWebsite(url: string): boolean {
-  const hostname = getHostname(url).replace(/^www\./, "").toLowerCase();
-
-  if (hostname.endsWith(".in")) return true;
-
-  /*
-   * A .com company can still be a genuine India business. The URL alone
-   * cannot prove geography, so allow common corporate domains through and
-   * let extractVerifiedCompany() verify the India location from the site.
-   */
-  return ![
-    "scribd.com",
-    "salezshark.com",
-    "value.today",
-    "pwc.com",
-    "usgs.gov",
-    "mining.com",
-  ].some((domain) => hostname === domain || hostname.endsWith(`.${domain}`));
-}
 
 /* =========================================================
    14. DIRECT DISCOVERY
@@ -1422,10 +1459,9 @@ async function directDiscovery(prompt: string, options: ResearchRunOptions = {})
   const counter = options.newLeadCount ?? { value: 0 };
   const seenWebsites = new Set<string>();
 
-  const normalizedPrompt = prompt.toLowerCase();
   const requestedLocation = extractRequestedLocation(prompt).toLowerCase();
-  const isIndia =
-    requestedLocation === "india" || /\bindia\b/.test(normalizedPrompt);
+  const isIndiaRequest =
+    requestedLocation === "india" || /\bindia\b/i.test(prompt);
 
   for (const query of queries) {
     if (counter.value >= limit) break;
@@ -1438,7 +1474,6 @@ async function directDiscovery(prompt: string, options: ResearchRunOptions = {})
 
     try {
       const data = await tavilySearch(query, MAX_SEARCH_RESULTS, {
-        country: isIndia ? "india" : undefined,
         excludeDomains: TAVILY_EXCLUDE_DOMAINS,
       });
 
@@ -1459,8 +1494,17 @@ async function directDiscovery(prompt: string, options: ResearchRunOptions = {})
 
           let relevance = score;
 
-          if (/\.in(?:\/|$)/i.test(url)) relevance += 0.20;
-          if (/\b(india|indian|maharashtra|gujarat|tamil nadu|karnataka|telangana|haryana|uttar pradesh|delhi|noida|gurugram|pune|ahmedabad|chennai|bengaluru|hyderabad)\b/i.test(combined)) {
+          if (
+            isIndiaRequest &&
+            /\.in(?:\/|$)/i.test(url)
+          ) {
+            relevance += 0.20;
+          }
+
+          if (
+            isIndiaRequest &&
+            /\b(india|indian|maharashtra|gujarat|tamil nadu|karnataka|telangana|haryana|uttar pradesh|delhi|noida|gurugram|pune|ahmedabad|chennai|bengaluru|hyderabad)\b/i.test(combined)
+          ) {
             relevance += 0.20;
           }
 
@@ -1487,7 +1531,7 @@ const websites: string[] = Array.from(
 for (const website of websites) {
   if (counter.value >= limit) break;
 
-  const normalizedWebsite = normalizeUrl(website).toLowerCase();
+  const normalizedWebsite = normalizeDomainKey(website);
 
   if (seenWebsites.has(normalizedWebsite)) {
     emitResearchEvent(
@@ -1500,11 +1544,13 @@ for (const website of websites) {
 
   seenWebsites.add(normalizedWebsite);
 
-  if (isIndia && !isIndiaRelevantWebsite(website)) {
+  // Early duplicate check: do not spend Tavily extraction/verification
+  // time on a domain that is already present in PostgreSQL.
+  if (knownLeadKeys.websites.has(normalizedWebsite)) {
     emitResearchEvent(
       options.onEvent,
       "skipped",
-      `Non-India website skipped: ${website}`
+      `Duplicate lead skipped before verification: ${website}`
     );
     continue;
   }
@@ -1527,6 +1573,16 @@ for (const website of websites) {
       "skipped",
       `Duplicate lead skipped: ${website}`
     );
+    continue;
+  }
+
+  const savedImmediately = await saveVerifiedLeadImmediately(
+    lead,
+    options.onEvent,
+    website
+  );
+
+  if (!savedImmediately) {
     continue;
   }
 
@@ -1595,6 +1651,10 @@ async function directoryDiscovery(prompt: string, options: ResearchRunOptions = 
         for (const companyName of candidates) {
           if (counter.value >= limit) break;
 
+          // Candidate names can repeat across discovery sources. We cannot
+          // know the final domain yet, so identity verification remains
+          // necessary here; the official domain is checked before extraction
+          // as soon as it is discovered below.
           emitResearchEvent(
             options.onEvent,
             "check",
@@ -1611,6 +1671,17 @@ async function directoryDiscovery(prompt: string, options: ResearchRunOptions = 
               options.onEvent,
               "rejected",
               `Official website not verified: ${companyName}`
+            );
+            continue;
+          }
+
+          const normalizedOfficialDomain = normalizeDomainKey(officialWebsite);
+
+          if (knownLeadKeys.websites.has(normalizedOfficialDomain)) {
+            emitResearchEvent(
+              options.onEvent,
+              "skipped",
+              `Duplicate lead skipped before verification: ${officialWebsite}`
             );
             continue;
           }
@@ -1643,6 +1714,16 @@ async function directoryDiscovery(prompt: string, options: ResearchRunOptions = 
               "skipped",
               `Duplicate lead skipped: ${officialWebsite}`
             );
+            continue;
+          }
+
+          const savedImmediately = await saveVerifiedLeadImmediately(
+            lead,
+            options.onEvent,
+            officialWebsite
+          );
+
+          if (!savedImmediately) {
             continue;
           }
 
@@ -1689,7 +1770,7 @@ function deduplicateLeads(leads: SectorLead[]): SectorLead[] {
   const byWebsite = new Map<string, SectorLead>();
 
   for (const lead of leads) {
-    const key = normalizeUrl(lead.website).toLowerCase();
+    const key = normalizeDomainKey(lead.website);
     if (!key) continue;
 
     const existing = byWebsite.get(key);
@@ -1784,14 +1865,16 @@ export async function runResearch(
     );
     console.log("[V10] Stage 2 → Additional official-domain discovery");
 
-    const remaining = limit - newLeadCount.value;
+    const requestedLocation = extractRequestedLocation(job.prompt);
+    const locationSuffix = requestedLocation ? ` in ${requestedLocation}` : "";
+
     const extraQueries = [
-      "industrial companies India factory plant contact official website",
-      "manufacturing plant operator India factory contact official website",
-      "warehouse logistics operator India facility contact official website",
-      "solar renewable power operator India plant contact official website",
-      "industrial engineering company India machinery plant contact official website",
-      "food pharma chemical manufacturing India plant contact official website",
+      `industrial companies factory plant${locationSuffix} contact official website`,
+      `manufacturing plant operator factory${locationSuffix} contact official website`,
+      `warehouse logistics operator facility${locationSuffix} contact official website`,
+      `solar renewable power operator plant${locationSuffix} contact official website`,
+      `industrial engineering machinery equipment${locationSuffix} contact official website`,
+      `food pharma chemical manufacturing plant${locationSuffix} contact official website`,
     ];
 
     for (const query of extraQueries) {
@@ -1801,7 +1884,6 @@ export async function runResearch(
 
       try {
         const data = await tavilySearch(query, MAX_SEARCH_RESULTS, {
-          country: "india",
           excludeDomains: TAVILY_EXCLUDE_DOMAINS,
         });
 
@@ -1813,17 +1895,13 @@ export async function runResearch(
           const website = getOrigin(String(result?.url || ""));
           if (!website || !isPotentialOfficialWebsite(website)) continue;
 
-          const normalizedWebsite = normalizeUrl(website).toLowerCase();
+          const normalizedWebsite = normalizeDomainKey(website);
           if (knownLeadKeys.websites.has(normalizedWebsite)) {
             emitResearchEvent(
               options.onEvent,
               "skipped",
               `Duplicate lead skipped: ${website}`
             );
-            continue;
-          }
-
-          if (leads.some((lead) => normalizeUrl(lead.website).toLowerCase() === normalizedWebsite)) {
             continue;
           }
 
@@ -1848,6 +1926,16 @@ export async function runResearch(
             continue;
           }
 
+          const savedImmediately = await saveVerifiedLeadImmediately(
+            lead,
+            options.onEvent,
+            website
+          );
+
+          if (!savedImmediately) {
+            continue;
+          }
+
           leads.push(lead);
           registerLeadKeys(lead, knownLeadKeys);
           newLeadCount.value += 1;
@@ -1868,7 +1956,7 @@ export async function runResearch(
       }
     }
 
-    console.log("[V10] Additional official-domain verified:", remaining - (limit - newLeadCount.value));
+    // console.log("[V10] Additional official-domain verified:", remaining - (limit - newLeadCount.value));
   }
 
   emitResearchEvent(
@@ -1891,46 +1979,20 @@ export async function runResearch(
     .filter(finalQualityGate)
     .slice(0, limit);
 
+  /*
+   * Stage 5 is intentionally NOT a bulk database save.
+   *
+   * Every accepted lead was already persisted immediately after official
+   * verification. This prevents data loss if the research run stops,
+   * times out, crashes or reaches an API error after some leads were found.
+   */
+  job.leadsFound = newLeadCount.value;
+
   emitResearchEvent(
     options.onEvent,
-    "info",
-    "[V10] Stage 5 → Saving verified leads"
+    "success",
+    `${newLeadCount.value} new lead${newLeadCount.value === 1 ? "" : "s"} saved to PostgreSQL during discovery`
   );
-  console.log("[V10] Stage 5 → Saving verified leads");
-
-  let savedCount = 0;
-  let duplicateCount = 0;
-
-  if (finalLeads.length > 0) {
-    emitResearchEvent(
-      options.onEvent,
-      "info",
-      `Saving ${finalLeads.length} new verified leads to PostgreSQL`
-    );
-
-    const saveResult = await addLeads(
-      finalLeads as unknown as ResearchLead[]
-    );
-
-    savedCount = saveResult.saved;
-    duplicateCount = saveResult.duplicates;
-
-    job.leadsFound = savedCount;
-
-    emitResearchEvent(
-      options.onEvent,
-      "success",
-      `${savedCount} new lead${savedCount === 1 ? "" : "s"} saved to PostgreSQL`
-    );
-
-    if (duplicateCount > 0) {
-      emitResearchEvent(
-        options.onEvent,
-        "skipped",
-        `${duplicateCount} duplicate lead${duplicateCount === 1 ? "" : "s"} skipped`
-      );
-    }
-  }
 
   emitResearchEvent(
     options.onEvent,
@@ -1942,8 +2004,8 @@ export async function runResearch(
   console.log("UCT PROSPECT INTELLIGENCE V10 FINAL POWER COMPLETE");
   console.log("Verified before final gate:", leads.length);
   console.log("FINAL LEADS:", finalLeads.length);
-  console.log("NEW LEADS SAVED:", savedCount);
-  console.log("DUPLICATES SKIPPED:", duplicateCount);
+  console.log("NEW LEADS SAVED:", newLeadCount.value);
+  console.log("DUPLICATES SKIPPED:", 0);
   console.log("=============================================");
 
   emitResearchEvent(
@@ -1959,7 +2021,7 @@ export async function runResearch(
   emitResearchEvent(
     options.onEvent,
     "success",
-    `FINAL LEADS: ${savedCount}`
+    `FINAL LEADS: ${newLeadCount.value}`
   );
   emitResearchEvent(
     options.onEvent,
@@ -1970,7 +2032,7 @@ export async function runResearch(
   emitResearchEvent(
     options.onEvent,
     "complete",
-    `Research completed · ${savedCount} new leads saved`
+    `Research completed · ${newLeadCount.value} new leads saved`
   );
 
   /*
@@ -1979,4 +2041,3 @@ export async function runResearch(
    */
   return finalLeads;
 }
-
