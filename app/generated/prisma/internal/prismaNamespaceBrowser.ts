@@ -51,9 +51,7 @@ export const AnyNull = runtime.AnyNull
 
 
 export const ModelName = {
-  Lead: 'Lead',
-  EmailTemplate: 'EmailTemplate',
-  EmailSender: 'EmailSender'
+  Lead: 'Lead'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -86,9 +84,12 @@ export const LeadScalarFieldEnum = {
   emailStatus: 'emailStatus',
   emailScheduledAt: 'emailScheduledAt',
   emailSentAt: 'emailSentAt',
+  emailDeliveredAt: 'emailDeliveredAt',
+  emailOpenedAt: 'emailOpenedAt',
+  emailClickedAt: 'emailClickedAt',
+  emailRepliedAt: 'emailRepliedAt',
   emailError: 'emailError',
-  emailTemplateId: 'emailTemplateId',
-  emailSenderId: 'emailSenderId',
+  emailMessageId: 'emailMessageId',
   emailTemplateName: 'emailTemplateName',
   emailSubject: 'emailSubject',
   emailBody: 'emailBody',
@@ -99,31 +100,6 @@ export const LeadScalarFieldEnum = {
 } as const
 
 export type LeadScalarFieldEnum = (typeof LeadScalarFieldEnum)[keyof typeof LeadScalarFieldEnum]
-
-
-export const EmailTemplateScalarFieldEnum = {
-  id: 'id',
-  name: 'name',
-  subject: 'subject',
-  body: 'body',
-  isActive: 'isActive',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
-} as const
-
-export type EmailTemplateScalarFieldEnum = (typeof EmailTemplateScalarFieldEnum)[keyof typeof EmailTemplateScalarFieldEnum]
-
-
-export const EmailSenderScalarFieldEnum = {
-  id: 'id',
-  name: 'name',
-  email: 'email',
-  isActive: 'isActive',
-  createdAt: 'createdAt',
-  updatedAt: 'updatedAt'
-} as const
-
-export type EmailSenderScalarFieldEnum = (typeof EmailSenderScalarFieldEnum)[keyof typeof EmailSenderScalarFieldEnum]
 
 
 export const SortOrder = {

@@ -6,151 +6,222 @@ type EmailStatus =
   | "scheduled"
   | "sending"
   | "sent"
+  | "delivered"
+  | "replied"
   | "failed";
-
-const FIXED_SENDER_EMAIL = "farid995576@gmail.com";
 
 const VALID_STATUSES: EmailStatus[] = [
   "pending",
   "scheduled",
   "sending",
   "sent",
+  "delivered",
+  "replied",
   "failed",
 ];
 
 function parseIds(value: unknown): number[] {
-  if (!Array.isArray(value)) {
-    return [];
-  }
+  if (!Array.isArray(value)) return [];
 
   return [
     ...new Set(
       value
         .map((id) => Number(id))
-        .filter(
-          (id) => Number.isInteger(id) && id > 0
-        )
+        .filter((id) => Number.isInteger(id) && id > 0)
     ),
   ];
 }
 
 function validDate(value: unknown): value is string {
-  if (typeof value !== "string" || !value.trim()) {
-    return false;
-  }
+  if (typeof value !== "string" || !value.trim()) return false;
 
   return !Number.isNaN(new Date(value).getTime());
 }
 
-function normalizeStatus(
-  value: string | null
-): EmailStatus {
-  if (
-    value &&
-    VALID_STATUSES.includes(value as EmailStatus)
-  ) {
-    return value as EmailStatus;
-  }
-
-  return "pending";
+function normalizeStatus(value: string | null): EmailStatus {
+  return value && VALID_STATUSES.includes(value as EmailStatus)
+    ? (value as EmailStatus)
+    : "pending";
 }
 
-function personalize(
-  text: string,
-  lead: {
-    email: string | null;
-    website: string;
-    location: string | null;
-  }
-) {
-  /*
-   * Company name is intentionally not shown in the
-   * current Lead table/schema.
-   *
-   * If a future companyName field is added, replace
-   * this value with lead.companyName.
-   */
-  const companyName =
-    lead.website
-      .replace(/^https?:\/\//i, "")
-      .replace(/^www\./i, "")
-      .split("/")[0];
+function getBrevoApiKey() {
+  return process.env.BREVO_API_KEY;
+}
 
-  return text
-    .replace(
-      /\{\{\s*company_name\s*\}\}/gi,
-      companyName
-    )
-    .replace(
-      /\{\{\s*email\s*\}\}/gi,
-      lead.email || ""
-    )
-    .replace(
-      /\{\{\s*website\s*\}\}/gi,
-      lead.website
-    )
-    .replace(
-      /\{\{\s*location\s*\}\}/gi,
-      lead.location || ""
+async function getBrevoTemplate(templateId: number) {
+  const apiKey = getBrevoApiKey();
+
+  if (!apiKey) {
+    throw new Error("BREVO_API_KEY is not configured.");
+  }
+
+  const response = await fetch(
+    `https://api.brevo.com/v3/smtp/templates/${templateId}`,
+    {
+      method: "GET",
+      headers: {
+        accept: "application/json",
+        "api-key": apiKey,
+      },
+      cache: "no-store",
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      data?.message || "Brevo template could not be loaded."
     );
+  }
+
+  return data;
+}
+
+function templateSubject(template: any) {
+  return String(template?.subject || "");
+}
+
+function templateName(template: any) {
+  return String(
+    template?.name || `Brevo Template ${template?.id ?? ""}`
+  );
+}
+
+function templateBody(template: any) {
+  return String(template?.htmlContent || template?.textContent || "");
+}
+
+function templateSender(template: any) {
+  const sender = template?.sender;
+
+  return {
+    name: String(sender?.name || ""),
+    email: String(sender?.email || ""),
+    id: sender?.id ?? null,
+  };
+}
+
+async function getEligibleLeads(leadIds: number[]) {
+  return prisma.lead.findMany({
+    where: {
+      id: { in: leadIds },
+
+      OR: [
+        {
+          verificationStatus: {
+            equals: "verified",
+            mode: "insensitive",
+          },
+        },
+        {
+          isVerified: true,
+        },
+      ],
+
+      email: { not: null },
+      emailStatus: "pending",
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
 }
 
 /*
-|--------------------------------------------------------------------------
-| GET
-|--------------------------------------------------------------------------
-|
-| Leads:
-| /api/email-outreach?status=pending
-|
-| Senders:
-| /api/email-outreach?resource=senders
-|--------------------------------------------------------------------------
-*/
-
+ * GET
+ *
+ * Supported:
+ * /api/email-outreach?status=pending
+ * /api/email-outreach?status=scheduled
+ * /api/email-outreach?status=sent
+ * /api/email-outreach?status=delivered
+ * /api/email-outreach?status=replied
+ * /api/email-outreach?status=failed
+ *
+ * /api/email-outreach?resource=counts
+ */
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
-
     const resource = searchParams.get("resource");
 
     /*
-     * SENDERS
+     * Lifecycle counts.
+     *
+     * A lead is considered verified when either:
+     * - verificationStatus = "verified", OR
+     * - isVerified = true
+     *
+     * This keeps the Email Outreach page aligned with the
+     * verification state already used by the Leads section.
      */
-    if (resource === "senders") {
-      const senders = await prisma.emailSender.findMany({
-        where: {
-          isActive: true,
-          email: FIXED_SENDER_EMAIL,
-        },
-        orderBy: {
-          createdAt: "desc",
-        },
-      });
+    if (resource === "counts") {
+      const countResults = await Promise.all(
+        VALID_STATUSES.map(async (emailStatus) => {
+          const count = await prisma.lead.count({
+            where: {
+              OR: [
+                {
+                  verificationStatus: {
+                    equals: "verified",
+                    mode: "insensitive",
+                  },
+                },
+                {
+                  isVerified: true,
+                },
+              ],
+
+              email: {
+                not: null,
+              },
+
+              emailStatus,
+            },
+          });
+
+          return [emailStatus, count] as const;
+        })
+      );
+
+      const counts = Object.fromEntries(countResults) as Record<
+        EmailStatus,
+        number
+      >;
 
       return NextResponse.json({
         success: true,
-        senders,
-        total: senders.length,
-        fixedSenderEmail: FIXED_SENDER_EMAIL,
+        counts,
       });
     }
 
     /*
-     * LEADS
+     * Leads by lifecycle status.
      */
-    const status = normalizeStatus(
-      searchParams.get("status")
-    );
+    const status = normalizeStatus(searchParams.get("status"));
 
     const leads = await prisma.lead.findMany({
       where: {
-        verificationStatus: "verified",
+        OR: [
+          {
+            verificationStatus: {
+              equals: "verified",
+              mode: "insensitive",
+            },
+          },
+          {
+            isVerified: true,
+          },
+        ],
+
         email: {
           not: null,
         },
+
         emailStatus: status,
       },
+
       orderBy: {
         createdAt: "desc",
       },
@@ -163,215 +234,120 @@ export async function GET(request: Request) {
       total: leads.length,
     });
   } catch (error) {
-    console.error(
-      "GET /api/email-outreach error:",
-      error
-    );
+    console.error("GET /api/email-outreach error:", error);
 
     return NextResponse.json(
       {
         success: false,
         error: "Failed to fetch email outreach data.",
       },
-      { status: 500 }
+      {
+        status: 500,
+      }
     );
   }
 }
 
 /*
-|--------------------------------------------------------------------------
-| POST
-|--------------------------------------------------------------------------
-|
-| action: create-sender
-|
-| OR
-|
-| action: schedule
-|
-| OR
-|
-| action: send-now
-|--------------------------------------------------------------------------
-*/
-
+ * POST
+ *
+ * Actions:
+ * - schedule
+ * - send-now
+ */
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-
     const action = body?.action;
 
-    /*
-     * CREATE SENDER
-     */
-    if (action === "create-sender") {
-      const name =
-        typeof body?.name === "string"
-          ? body.name.trim()
-          : "";
-
-      const email =
-        typeof body?.email === "string"
-          ? body.email.trim().toLowerCase()
-          : "";
-
-      if (!name || !email) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: "Sender name and email are required.",
-          },
-          { status: 400 }
-        );
-      }
-
-      if (email !== FIXED_SENDER_EMAIL) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: `Only ${FIXED_SENDER_EMAIL} can be used as the sender.`,
-          },
-          { status: 400 }
-        );
-      }
-
-      const existing =
-        await prisma.emailSender.findUnique({
-          where: { email: FIXED_SENDER_EMAIL },
-        });
-
-      if (existing) {
-        if (!existing.isActive) {
-          const sender =
-            await prisma.emailSender.update({
-              where: { id: existing.id },
-              data: {
-                name,
-                isActive: true,
-              },
-            });
-
-          return NextResponse.json({
-            success: true,
-            message: "Fixed sender activated successfully.",
-            sender,
-          });
-        }
-
-        return NextResponse.json({
-          success: true,
-          message: "Fixed sender already exists.",
-          sender: existing,
-        });
-      }
-
-      const sender =
-        await prisma.emailSender.create({
-          data: {
-            name,
-            email: FIXED_SENDER_EMAIL,
-            isActive: true,
-          },
-        });
-
+    if (action !== "schedule" && action !== "send-now") {
       return NextResponse.json(
         {
-          success: true,
-          message: "Fixed sender created successfully.",
-          sender,
+          success: false,
+          error: "Invalid action. Use schedule or send-now.",
         },
-        { status: 201 }
+        {
+          status: 400,
+        }
       );
     }
 
-    /*
-     * COMMON DATA
-     */
     const leadIds = parseIds(body?.leadIds);
 
-    if (leadIds.length === 0) {
+    if (!leadIds.length) {
       return NextResponse.json(
         {
           success: false,
           error: "Select at least one lead.",
         },
-        { status: 400 }
+        {
+          status: 400,
+        }
       );
     }
 
     const templateId = Number(body?.templateId);
 
-    if (
-      !Number.isInteger(templateId) ||
-      templateId <= 0
-    ) {
+    if (!Number.isInteger(templateId) || templateId <= 0) {
       return NextResponse.json(
         {
           success: false,
-          error: "Valid email template is required.",
+          error: "Valid Brevo template is required.",
         },
-        { status: 400 }
+        {
+          status: 400,
+        }
       );
     }
 
-    const template =
-      await prisma.emailTemplate.findFirst({
-        where: {
-          id: templateId,
-          isActive: true,
-        },
-      });
+    /*
+     * Brevo template is the source of truth for:
+     * - template name
+     * - subject
+     * - HTML body
+     * - sender
+     */
+    const template = await getBrevoTemplate(templateId);
+    const leads = await getEligibleLeads(leadIds);
 
-    if (!template) {
+    if (!leads.length) {
       return NextResponse.json(
         {
           success: false,
-          error: "Selected email template was not found.",
+          error: "No selected leads are eligible for outreach.",
         },
-        { status: 404 }
+        {
+          status: 400,
+        }
       );
     }
 
-    const sender =
-      await prisma.emailSender.findFirst({
-        where: {
-          email: FIXED_SENDER_EMAIL,
-          isActive: true,
-        },
-      });
+    const subject = templateSubject(template);
+    const bodyHtml = templateBody(template);
+    const name = templateName(template);
+    const sender = templateSender(template);
 
-    if (!sender) {
+    if (!subject) {
       return NextResponse.json(
         {
           success: false,
-          error:
-            `Fixed sender ${FIXED_SENDER_EMAIL} is not configured in EmailSender.`,
+          error: "Selected Brevo template has no subject.",
         },
-        { status: 400 }
+        {
+          status: 400,
+        }
       );
     }
 
-    const leads = await prisma.lead.findMany({
-      where: {
-        id: {
-          in: leadIds,
-        },
-        verificationStatus: "verified",
-        email: {
-          not: null,
-        },
-        emailStatus: "pending",
-      },
-    });
-
-    if (leads.length === 0) {
+    if (!sender.email) {
       return NextResponse.json(
         {
           success: false,
-          error:
-            "No selected leads are eligible for outreach.",
+          error: "Selected Brevo template has no sender email.",
         },
-        { status: 400 }
+        {
+          status: 400,
+        }
       );
     }
 
@@ -383,10 +359,11 @@ export async function POST(request: Request) {
         return NextResponse.json(
           {
             success: false,
-            error:
-              "A valid future date and time is required.",
+            error: "A valid future date and time is required.",
           },
-          { status: 400 }
+          {
+            status: 400,
+          }
         );
       }
 
@@ -396,292 +373,222 @@ export async function POST(request: Request) {
         return NextResponse.json(
           {
             success: false,
-            error:
-              "Scheduled date and time must be in the future.",
+            error: "Scheduled date and time must be in the future.",
           },
-          { status: 400 }
+          {
+            status: 400,
+          }
         );
       }
 
-      let scheduledCount = 0;
-
-      for (const lead of leads) {
-        const subject = personalize(
-          template.subject,
-          lead
-        );
-
-        const emailBody = personalize(
-          template.body,
-          lead
-        );
-
-        await prisma.lead.update({
-          where: {
-            id: lead.id,
+      const result = await prisma.lead.updateMany({
+        where: {
+          id: {
+            in: leads.map((lead) => lead.id),
           },
-          data: {
-            emailStatus: "scheduled",
-            emailScheduledAt: scheduledAt,
-            emailSentAt: null,
-            emailError: null,
 
-            emailTemplateId: template.id,
-            emailTemplateName: template.name,
-            emailSubject: subject,
-            emailBody,
-            emailSenderId: sender.id,
-            emailSenderName: sender.name,
-            emailSenderAddress: sender.email,
+          OR: [
+            {
+              verificationStatus: {
+                equals: "verified",
+                mode: "insensitive",
+              },
+            },
+            {
+              isVerified: true,
+            },
+          ],
+
+          email: {
+            not: null,
           },
-        });
 
-        scheduledCount++;
-      }
+          emailStatus: "pending",
+        },
+
+        data: {
+          emailStatus: "scheduled",
+          emailScheduledAt: scheduledAt,
+
+          emailSentAt: null,
+          emailDeliveredAt: null,
+          emailOpenedAt: null,
+          emailClickedAt: null,
+          emailRepliedAt: null,
+
+          emailError: null,
+          emailMessageId: null,
+
+          emailTemplateName: name,
+          emailSubject: subject,
+          emailBody: bodyHtml,
+
+          emailSenderName: sender.name || null,
+          emailSenderAddress: sender.email,
+        },
+      });
 
       return NextResponse.json({
         success: true,
-        message: `${scheduledCount} email(s) scheduled successfully.`,
-        scheduledCount,
-        scheduledAt:
-          scheduledAt.toISOString(),
+        message: `${result.count} email(s) scheduled successfully.`,
+        scheduledCount: result.count,
+        scheduledAt: scheduledAt.toISOString(),
       });
     }
 
     /*
      * SEND NOW
      */
-    
-    if (action === "send-now") {
-   const webhookUrl =
-  process.env.N8N_EMAIL_WEBHOOK_URL ||
-  "http://localhost:5678/webhook-test/uct-email";
+    const webhookUrl = process.env.N8N_EMAIL_WEBHOOK_URL;
 
-      if (!webhookUrl) {
-        return NextResponse.json(
-          {
-            success: false,
-            error:
-              "N8N_EMAIL_WEBHOOK_URL is not configured.",
+    if (!webhookUrl) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            "N8N_EMAIL_WEBHOOK_URL is not configured. Send Now is currently unavailable.",
+        },
+        {
+          status: 500,
+        }
+      );
+    }
+
+    let queuedCount = 0;
+    let failedCount = 0;
+
+    for (const lead of leads) {
+      /*
+       * Mark as sending BEFORE sending to n8n.
+       * This prevents duplicate selection.
+       */
+      await prisma.lead.update({
+        where: {
+          id: lead.id,
+        },
+
+        data: {
+          emailStatus: "sending",
+
+          emailScheduledAt: null,
+          emailSentAt: null,
+          emailDeliveredAt: null,
+          emailOpenedAt: null,
+          emailClickedAt: null,
+          emailRepliedAt: null,
+
+          emailError: null,
+          emailMessageId: null,
+
+          emailTemplateName: name,
+          emailSubject: subject,
+          emailBody: bodyHtml,
+
+          emailSenderName: sender.name || null,
+          emailSenderAddress: sender.email,
+        },
+      });
+
+      try {
+        const response = await fetch(webhookUrl, {
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json",
           },
-          { status: 500 }
-        );
-      }
 
-      let queuedCount = 0;
+          body: JSON.stringify({
+            leadId: lead.id,
+            toEmail: lead.email,
+            website: lead.website,
 
-      for (const lead of leads) {
-        const subject = personalize(
-          template.subject,
-          lead
-        );
+            templateId,
+            templateName: name,
 
-        const emailBody = personalize(
-          template.body,
-          lead
-        );
+            subject,
+
+            senderName: sender.name || null,
+            senderEmail: sender.email,
+            senderId: sender.id,
+
+            params: {
+              companyName: lead.website,
+            },
+          }),
+        });
+
+        if (!response.ok) {
+          throw new Error(`n8n returned HTTP ${response.status}`);
+        }
+
+        queuedCount++;
+      } catch (error) {
+        failedCount++;
 
         await prisma.lead.update({
           where: {
             id: lead.id,
           },
-          data: {
-            emailStatus: "sending",
-            emailScheduledAt: null,
-            emailSentAt: null,
-            emailError: null,
 
-            emailTemplateId: template.id,
-            emailTemplateName: template.name,
-            emailSubject: subject,
-            emailBody,
-            emailSenderId: sender.id,
-            emailSenderName: sender.name,
-            emailSenderAddress: sender.email,
+          data: {
+            emailStatus: "failed",
+            emailError:
+              error instanceof Error
+                ? error.message
+                : "Failed to queue email.",
           },
         });
-
-        try {
-          const response = await fetch(
-            webhookUrl,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify({
-                leadId: lead.id,
-                toEmail: lead.email,
-                subject,
-                body: emailBody,
-                senderName: sender.name,
-                senderEmail: sender.email,
-              }),
-            }
-          );
-
-          if (!response.ok) {
-            throw new Error(
-              `n8n returned HTTP ${response.status}`
-            );
-          }
-
-          queuedCount++;
-        } catch (error) {
-          const message =
-            error instanceof Error
-              ? error.message
-              : "Failed to send email.";
-
-          await prisma.lead.update({
-            where: {
-              id: lead.id,
-            },
-            data: {
-              emailStatus: "failed",
-              emailError: message,
-            },
-          });
-        }
       }
-
-      return NextResponse.json({
-        success: true,
-        message: `${queuedCount} email(s) sent to n8n.`,
-        queuedCount,
-        totalSelected: leads.length,
-      });
     }
 
-    return NextResponse.json(
-      {
-        success: false,
-        error:
-          "Invalid action. Use schedule, send-now or create-sender.",
-      },
-      { status: 400 }
-    );
+    return NextResponse.json({
+      success: true,
+      message: `${queuedCount} email(s) queued successfully.`,
+      queuedCount,
+      failedCount,
+      totalSelected: leads.length,
+    });
   } catch (error) {
-    console.error(
-      "POST /api/email-outreach error:",
-      error
-    );
+    console.error("POST /api/email-outreach error:", error);
 
     return NextResponse.json(
       {
         success: false,
         error: "Email outreach request failed.",
       },
-      { status: 500 }
+      {
+        status: 500,
+      }
     );
   }
 }
 
 /*
-|--------------------------------------------------------------------------
-| PATCH
-|--------------------------------------------------------------------------
-|
-| Sender edit:
-| {
-|   "resource": "sender",
-|   "id": 1,
-|   "name": "...",
-|   "email": "..."
-| }
-|
-| Email status:
-| {
-|   "leadIds": [1],
-|   "status": "sent"
-| }
-|--------------------------------------------------------------------------
-*/
-
+ * PATCH
+ *
+ * Used mainly by:
+ * - n8n
+ * - Brevo webhook
+ * - future reply integration
+ */
 export async function PATCH(request: Request) {
   try {
     const body = await request.json();
-
-    /*
-     * EDIT SENDER
-     */
-    if (body?.resource === "sender") {
-      const id = Number(body?.id);
-
-      if (!Number.isInteger(id) || id <= 0) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: "Valid sender ID is required.",
-          },
-          { status: 400 }
-        );
-      }
-
-      const existingSender =
-        await prisma.emailSender.findUnique({
-          where: { id },
-        });
-
-      if (
-        !existingSender ||
-        existingSender.email !== FIXED_SENDER_EMAIL
-      ) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: `Only the fixed sender ${FIXED_SENDER_EMAIL} can be edited.`,
-          },
-          { status: 400 }
-        );
-      }
-
-      if (
-        typeof body?.email === "string" &&
-        body.email.trim().toLowerCase() !== FIXED_SENDER_EMAIL
-      ) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: `Sender email must remain ${FIXED_SENDER_EMAIL}.`,
-          },
-          { status: 400 }
-        );
-      }
-
-      const sender =
-        await prisma.emailSender.update({
-          where: { id },
-          data: {
-            ...(typeof body?.name === "string" &&
-            body.name.trim()
-              ? { name: body.name.trim() }
-              : {}),
-          },
-        });
-
-      return NextResponse.json({
-        success: true,
-        message: "Sender updated successfully.",
-        sender,
-      });
-    }
-
-    /*
-     * EMAIL STATUS
-     */
     const leadIds = parseIds(body?.leadIds);
-    const status = body?.status as EmailStatus;
 
-    if (leadIds.length === 0) {
+    if (!leadIds.length) {
       return NextResponse.json(
         {
           success: false,
-          error: "At least one lead ID is required.",
+          error: "Valid lead IDs are required.",
         },
-        { status: 400 }
+        {
+          status: 400,
+        }
       );
     }
+
+    const status = body?.status as EmailStatus;
 
     if (!VALID_STATUSES.includes(status)) {
       return NextResponse.json(
@@ -689,55 +596,101 @@ export async function PATCH(request: Request) {
           success: false,
           error: "Invalid email status.",
         },
-        { status: 400 }
+        {
+          status: 400,
+        }
       );
     }
 
-    const data: {
-      emailStatus: EmailStatus;
-      emailSentAt?: Date | null;
-      emailError?: string | null;
-    } = {
+    const data: Record<string, unknown> = {
       emailStatus: status,
     };
 
     if (status === "sent") {
-      data.emailSentAt =
-        validDate(body?.sentAt)
-          ? new Date(body.sentAt)
-          : new Date();
+      data.emailSentAt = validDate(body?.sentAt)
+        ? new Date(body.sentAt)
+        : new Date();
+
+      data.emailError = null;
+
+      if (
+        typeof body?.messageId === "string" &&
+        body.messageId.trim()
+      ) {
+        data.emailMessageId = body.messageId.trim();
+      }
+    }
+
+    if (status === "delivered") {
+      data.emailDeliveredAt = validDate(body?.deliveredAt)
+        ? new Date(body.deliveredAt)
+        : new Date();
+
+      data.emailError = null;
+
+      if (
+        typeof body?.messageId === "string" &&
+        body.messageId.trim()
+      ) {
+        data.emailMessageId = body.messageId.trim();
+      }
+    }
+
+    if (status === "replied") {
+      data.emailRepliedAt = validDate(body?.repliedAt)
+        ? new Date(body.repliedAt)
+        : new Date();
 
       data.emailError = null;
     }
 
     if (status === "failed") {
       data.emailError =
-        typeof body?.error === "string" &&
-        body.error.trim()
+        typeof body?.error === "string" && body.error.trim()
           ? body.error.trim()
           : "Email sending failed.";
     }
 
-    if (
-      status === "sending" ||
-      status === "scheduled"
-    ) {
-      data.emailError = null;
+    if (validDate(body?.openedAt)) {
+      data.emailOpenedAt = new Date(body.openedAt);
     }
 
-    const result =
-      await prisma.lead.updateMany({
-        where: {
-          id: {
-            in: leadIds,
-          },
-          verificationStatus: "verified",
-          email: {
-            not: null,
-          },
+    if (validDate(body?.clickedAt)) {
+      data.emailClickedAt = new Date(body.clickedAt);
+    }
+
+    if (
+      typeof body?.messageId === "string" &&
+      body.messageId.trim()
+    ) {
+      data.emailMessageId = body.messageId.trim();
+    }
+
+    const result = await prisma.lead.updateMany({
+      where: {
+        id: {
+          in: leadIds,
         },
-        data,
-      });
+
+        OR: [
+          {
+            verificationStatus: {
+              equals: "verified",
+              mode: "insensitive",
+            },
+          },
+          {
+            isVerified: true,
+          },
+        ],
+
+        email: {
+          not: null,
+        },
+      },
+
+      data,
+    });
 
     return NextResponse.json({
       success: true,
@@ -746,117 +699,80 @@ export async function PATCH(request: Request) {
       status,
     });
   } catch (error) {
-    console.error(
-      "PATCH /api/email-outreach error:",
-      error
-    );
+    console.error("PATCH /api/email-outreach error:", error);
 
     return NextResponse.json(
       {
         success: false,
         error: "Failed to update email status.",
       },
-      { status: 500 }
+      {
+        status: 500,
+      }
     );
   }
 }
 
 /*
-|--------------------------------------------------------------------------
-| DELETE
-|--------------------------------------------------------------------------
-|
-| Cancel scheduled email:
-|
-| /api/email-outreach
-| body:
-| {
-|   "leadIds": [1,2,3]
-| }
-|
-|--------------------------------------------------------------------------
-*/
-
+ * DELETE
+ *
+ * Cancel scheduled emails.
+ *
+ * scheduled → pending
+ */
 export async function DELETE(request: Request) {
   try {
     const body = await request.json();
-
-    /*
-     * DELETE SENDER
-     */
-    if (body?.resource === "sender") {
-      const id = Number(body?.id);
-
-      if (!Number.isInteger(id) || id <= 0) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: "Valid sender ID is required.",
-          },
-          { status: 400 }
-        );
-      }
-
-      const existingSender =
-        await prisma.emailSender.findUnique({
-          where: { id },
-        });
-
-      if (
-        !existingSender ||
-        existingSender.email !== FIXED_SENDER_EMAIL
-      ) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: "Sender not found.",
-          },
-          { status: 404 }
-        );
-      }
-
-      return NextResponse.json(
-        {
-          success: false,
-          error: `The fixed sender ${FIXED_SENDER_EMAIL} cannot be removed.`,
-        },
-        { status: 400 }
-      );
-    }
-
-    /*
-     * CANCEL SCHEDULED EMAIL
-     */
     const leadIds = parseIds(body?.leadIds);
 
-    if (leadIds.length === 0) {
+    if (!leadIds.length) {
       return NextResponse.json(
         {
           success: false,
           error: "At least one lead ID is required.",
         },
-        { status: 400 }
+        {
+          status: 400,
+        }
       );
     }
 
-    const result =
-      await prisma.lead.updateMany({
-        where: {
-          id: {
-            in: leadIds,
-          },
-          verificationStatus: "verified",
-          email: {
-            not: null,
-          },
-          emailStatus: "scheduled",
+    const result = await prisma.lead.updateMany({
+      where: {
+        id: {
+          in: leadIds,
         },
-        data: {
-          emailStatus: "pending",
-          emailScheduledAt: null,
-          emailError: null,
+
+        OR: [
+          {
+            verificationStatus: {
+              equals: "verified",
+              mode: "insensitive",
+            },
+          },
+          {
+            isVerified: true,
+          },
+        ],
+
+        email: {
+          not: null,
         },
-      });
+
+        emailStatus: "scheduled",
+      },
+
+      data: {
+        emailStatus: "pending",
+        emailScheduledAt: null,
+        emailError: null,
+        emailTemplateName: null,
+        emailSubject: null,
+        emailBody: null,
+        emailSenderName: null,
+        emailSenderAddress: null,
+      },
+    });
 
     return NextResponse.json({
       success: true,
@@ -864,17 +780,16 @@ export async function DELETE(request: Request) {
       cancelledCount: result.count,
     });
   } catch (error) {
-    console.error(
-      "DELETE /api/email-outreach error:",
-      error
-    );
+    console.error("DELETE /api/email-outreach error:", error);
 
     return NextResponse.json(
       {
         success: false,
-        error: "Failed to process delete request.",
+        error: "Failed to cancel scheduled email.",
       },
-      { status: 500 }
+      {
+        status: 500,
+      }
     );
   }
 }

@@ -28,14 +28,10 @@ export type AggregateLead = {
 
 export type LeadAvgAggregateOutputType = {
   id: number | null
-  emailTemplateId: number | null
-  emailSenderId: number | null
 }
 
 export type LeadSumAggregateOutputType = {
   id: number | null
-  emailTemplateId: number | null
-  emailSenderId: number | null
 }
 
 export type LeadMinAggregateOutputType = {
@@ -52,9 +48,12 @@ export type LeadMinAggregateOutputType = {
   emailStatus: string | null
   emailScheduledAt: Date | null
   emailSentAt: Date | null
+  emailDeliveredAt: Date | null
+  emailOpenedAt: Date | null
+  emailClickedAt: Date | null
+  emailRepliedAt: Date | null
   emailError: string | null
-  emailTemplateId: number | null
-  emailSenderId: number | null
+  emailMessageId: string | null
   emailTemplateName: string | null
   emailSubject: string | null
   emailBody: string | null
@@ -78,9 +77,12 @@ export type LeadMaxAggregateOutputType = {
   emailStatus: string | null
   emailScheduledAt: Date | null
   emailSentAt: Date | null
+  emailDeliveredAt: Date | null
+  emailOpenedAt: Date | null
+  emailClickedAt: Date | null
+  emailRepliedAt: Date | null
   emailError: string | null
-  emailTemplateId: number | null
-  emailSenderId: number | null
+  emailMessageId: string | null
   emailTemplateName: string | null
   emailSubject: string | null
   emailBody: string | null
@@ -104,9 +106,12 @@ export type LeadCountAggregateOutputType = {
   emailStatus: number
   emailScheduledAt: number
   emailSentAt: number
+  emailDeliveredAt: number
+  emailOpenedAt: number
+  emailClickedAt: number
+  emailRepliedAt: number
   emailError: number
-  emailTemplateId: number
-  emailSenderId: number
+  emailMessageId: number
   emailTemplateName: number
   emailSubject: number
   emailBody: number
@@ -120,14 +125,10 @@ export type LeadCountAggregateOutputType = {
 
 export type LeadAvgAggregateInputType = {
   id?: true
-  emailTemplateId?: true
-  emailSenderId?: true
 }
 
 export type LeadSumAggregateInputType = {
   id?: true
-  emailTemplateId?: true
-  emailSenderId?: true
 }
 
 export type LeadMinAggregateInputType = {
@@ -144,9 +145,12 @@ export type LeadMinAggregateInputType = {
   emailStatus?: true
   emailScheduledAt?: true
   emailSentAt?: true
+  emailDeliveredAt?: true
+  emailOpenedAt?: true
+  emailClickedAt?: true
+  emailRepliedAt?: true
   emailError?: true
-  emailTemplateId?: true
-  emailSenderId?: true
+  emailMessageId?: true
   emailTemplateName?: true
   emailSubject?: true
   emailBody?: true
@@ -170,9 +174,12 @@ export type LeadMaxAggregateInputType = {
   emailStatus?: true
   emailScheduledAt?: true
   emailSentAt?: true
+  emailDeliveredAt?: true
+  emailOpenedAt?: true
+  emailClickedAt?: true
+  emailRepliedAt?: true
   emailError?: true
-  emailTemplateId?: true
-  emailSenderId?: true
+  emailMessageId?: true
   emailTemplateName?: true
   emailSubject?: true
   emailBody?: true
@@ -196,9 +203,12 @@ export type LeadCountAggregateInputType = {
   emailStatus?: true
   emailScheduledAt?: true
   emailSentAt?: true
+  emailDeliveredAt?: true
+  emailOpenedAt?: true
+  emailClickedAt?: true
+  emailRepliedAt?: true
   emailError?: true
-  emailTemplateId?: true
-  emailSenderId?: true
+  emailMessageId?: true
   emailTemplateName?: true
   emailSubject?: true
   emailBody?: true
@@ -309,9 +319,12 @@ export type LeadGroupByOutputType = {
   emailStatus: string
   emailScheduledAt: Date | null
   emailSentAt: Date | null
+  emailDeliveredAt: Date | null
+  emailOpenedAt: Date | null
+  emailClickedAt: Date | null
+  emailRepliedAt: Date | null
   emailError: string | null
-  emailTemplateId: number | null
-  emailSenderId: number | null
+  emailMessageId: string | null
   emailTemplateName: string | null
   emailSubject: string | null
   emailBody: string | null
@@ -358,9 +371,12 @@ export type LeadWhereInput = {
   emailStatus?: Prisma.StringFilter<"Lead"> | string
   emailScheduledAt?: Prisma.DateTimeNullableFilter<"Lead"> | Date | string | null
   emailSentAt?: Prisma.DateTimeNullableFilter<"Lead"> | Date | string | null
+  emailDeliveredAt?: Prisma.DateTimeNullableFilter<"Lead"> | Date | string | null
+  emailOpenedAt?: Prisma.DateTimeNullableFilter<"Lead"> | Date | string | null
+  emailClickedAt?: Prisma.DateTimeNullableFilter<"Lead"> | Date | string | null
+  emailRepliedAt?: Prisma.DateTimeNullableFilter<"Lead"> | Date | string | null
   emailError?: Prisma.StringNullableFilter<"Lead"> | string | null
-  emailTemplateId?: Prisma.IntNullableFilter<"Lead"> | number | null
-  emailSenderId?: Prisma.IntNullableFilter<"Lead"> | number | null
+  emailMessageId?: Prisma.StringNullableFilter<"Lead"> | string | null
   emailTemplateName?: Prisma.StringNullableFilter<"Lead"> | string | null
   emailSubject?: Prisma.StringNullableFilter<"Lead"> | string | null
   emailBody?: Prisma.StringNullableFilter<"Lead"> | string | null
@@ -368,8 +384,6 @@ export type LeadWhereInput = {
   emailSenderAddress?: Prisma.StringNullableFilter<"Lead"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Lead"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Lead"> | Date | string
-  emailTemplate?: Prisma.XOR<Prisma.EmailTemplateNullableScalarRelationFilter, Prisma.EmailTemplateWhereInput> | null
-  emailSender?: Prisma.XOR<Prisma.EmailSenderNullableScalarRelationFilter, Prisma.EmailSenderWhereInput> | null
 }
 
 export type LeadOrderByWithRelationInput = {
@@ -386,9 +400,12 @@ export type LeadOrderByWithRelationInput = {
   emailStatus?: Prisma.SortOrder
   emailScheduledAt?: Prisma.SortOrderInput | Prisma.SortOrder
   emailSentAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  emailDeliveredAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  emailOpenedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  emailClickedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  emailRepliedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   emailError?: Prisma.SortOrderInput | Prisma.SortOrder
-  emailTemplateId?: Prisma.SortOrderInput | Prisma.SortOrder
-  emailSenderId?: Prisma.SortOrderInput | Prisma.SortOrder
+  emailMessageId?: Prisma.SortOrderInput | Prisma.SortOrder
   emailTemplateName?: Prisma.SortOrderInput | Prisma.SortOrder
   emailSubject?: Prisma.SortOrderInput | Prisma.SortOrder
   emailBody?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -396,8 +413,6 @@ export type LeadOrderByWithRelationInput = {
   emailSenderAddress?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
-  emailTemplate?: Prisma.EmailTemplateOrderByWithRelationInput
-  emailSender?: Prisma.EmailSenderOrderByWithRelationInput
 }
 
 export type LeadWhereUniqueInput = Prisma.AtLeast<{
@@ -417,9 +432,12 @@ export type LeadWhereUniqueInput = Prisma.AtLeast<{
   emailStatus?: Prisma.StringFilter<"Lead"> | string
   emailScheduledAt?: Prisma.DateTimeNullableFilter<"Lead"> | Date | string | null
   emailSentAt?: Prisma.DateTimeNullableFilter<"Lead"> | Date | string | null
+  emailDeliveredAt?: Prisma.DateTimeNullableFilter<"Lead"> | Date | string | null
+  emailOpenedAt?: Prisma.DateTimeNullableFilter<"Lead"> | Date | string | null
+  emailClickedAt?: Prisma.DateTimeNullableFilter<"Lead"> | Date | string | null
+  emailRepliedAt?: Prisma.DateTimeNullableFilter<"Lead"> | Date | string | null
   emailError?: Prisma.StringNullableFilter<"Lead"> | string | null
-  emailTemplateId?: Prisma.IntNullableFilter<"Lead"> | number | null
-  emailSenderId?: Prisma.IntNullableFilter<"Lead"> | number | null
+  emailMessageId?: Prisma.StringNullableFilter<"Lead"> | string | null
   emailTemplateName?: Prisma.StringNullableFilter<"Lead"> | string | null
   emailSubject?: Prisma.StringNullableFilter<"Lead"> | string | null
   emailBody?: Prisma.StringNullableFilter<"Lead"> | string | null
@@ -427,8 +445,6 @@ export type LeadWhereUniqueInput = Prisma.AtLeast<{
   emailSenderAddress?: Prisma.StringNullableFilter<"Lead"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Lead"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Lead"> | Date | string
-  emailTemplate?: Prisma.XOR<Prisma.EmailTemplateNullableScalarRelationFilter, Prisma.EmailTemplateWhereInput> | null
-  emailSender?: Prisma.XOR<Prisma.EmailSenderNullableScalarRelationFilter, Prisma.EmailSenderWhereInput> | null
 }, "id" | "website" | "phone" | "email">
 
 export type LeadOrderByWithAggregationInput = {
@@ -445,9 +461,12 @@ export type LeadOrderByWithAggregationInput = {
   emailStatus?: Prisma.SortOrder
   emailScheduledAt?: Prisma.SortOrderInput | Prisma.SortOrder
   emailSentAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  emailDeliveredAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  emailOpenedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  emailClickedAt?: Prisma.SortOrderInput | Prisma.SortOrder
+  emailRepliedAt?: Prisma.SortOrderInput | Prisma.SortOrder
   emailError?: Prisma.SortOrderInput | Prisma.SortOrder
-  emailTemplateId?: Prisma.SortOrderInput | Prisma.SortOrder
-  emailSenderId?: Prisma.SortOrderInput | Prisma.SortOrder
+  emailMessageId?: Prisma.SortOrderInput | Prisma.SortOrder
   emailTemplateName?: Prisma.SortOrderInput | Prisma.SortOrder
   emailSubject?: Prisma.SortOrderInput | Prisma.SortOrder
   emailBody?: Prisma.SortOrderInput | Prisma.SortOrder
@@ -479,9 +498,12 @@ export type LeadScalarWhereWithAggregatesInput = {
   emailStatus?: Prisma.StringWithAggregatesFilter<"Lead"> | string
   emailScheduledAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Lead"> | Date | string | null
   emailSentAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Lead"> | Date | string | null
+  emailDeliveredAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Lead"> | Date | string | null
+  emailOpenedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Lead"> | Date | string | null
+  emailClickedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Lead"> | Date | string | null
+  emailRepliedAt?: Prisma.DateTimeNullableWithAggregatesFilter<"Lead"> | Date | string | null
   emailError?: Prisma.StringNullableWithAggregatesFilter<"Lead"> | string | null
-  emailTemplateId?: Prisma.IntNullableWithAggregatesFilter<"Lead"> | number | null
-  emailSenderId?: Prisma.IntNullableWithAggregatesFilter<"Lead"> | number | null
+  emailMessageId?: Prisma.StringNullableWithAggregatesFilter<"Lead"> | string | null
   emailTemplateName?: Prisma.StringNullableWithAggregatesFilter<"Lead"> | string | null
   emailSubject?: Prisma.StringNullableWithAggregatesFilter<"Lead"> | string | null
   emailBody?: Prisma.StringNullableWithAggregatesFilter<"Lead"> | string | null
@@ -504,7 +526,12 @@ export type LeadCreateInput = {
   emailStatus?: string
   emailScheduledAt?: Date | string | null
   emailSentAt?: Date | string | null
+  emailDeliveredAt?: Date | string | null
+  emailOpenedAt?: Date | string | null
+  emailClickedAt?: Date | string | null
+  emailRepliedAt?: Date | string | null
   emailError?: string | null
+  emailMessageId?: string | null
   emailTemplateName?: string | null
   emailSubject?: string | null
   emailBody?: string | null
@@ -512,8 +539,6 @@ export type LeadCreateInput = {
   emailSenderAddress?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
-  emailTemplate?: Prisma.EmailTemplateCreateNestedOneWithoutLeadsInput
-  emailSender?: Prisma.EmailSenderCreateNestedOneWithoutLeadsInput
 }
 
 export type LeadUncheckedCreateInput = {
@@ -530,9 +555,12 @@ export type LeadUncheckedCreateInput = {
   emailStatus?: string
   emailScheduledAt?: Date | string | null
   emailSentAt?: Date | string | null
+  emailDeliveredAt?: Date | string | null
+  emailOpenedAt?: Date | string | null
+  emailClickedAt?: Date | string | null
+  emailRepliedAt?: Date | string | null
   emailError?: string | null
-  emailTemplateId?: number | null
-  emailSenderId?: number | null
+  emailMessageId?: string | null
   emailTemplateName?: string | null
   emailSubject?: string | null
   emailBody?: string | null
@@ -555,7 +583,12 @@ export type LeadUpdateInput = {
   emailStatus?: Prisma.StringFieldUpdateOperationsInput | string
   emailScheduledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   emailSentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailDeliveredAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailOpenedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailClickedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailRepliedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   emailError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailMessageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   emailTemplateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   emailSubject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   emailBody?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -563,8 +596,6 @@ export type LeadUpdateInput = {
   emailSenderAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  emailTemplate?: Prisma.EmailTemplateUpdateOneWithoutLeadsNestedInput
-  emailSender?: Prisma.EmailSenderUpdateOneWithoutLeadsNestedInput
 }
 
 export type LeadUncheckedUpdateInput = {
@@ -581,9 +612,12 @@ export type LeadUncheckedUpdateInput = {
   emailStatus?: Prisma.StringFieldUpdateOperationsInput | string
   emailScheduledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   emailSentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailDeliveredAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailOpenedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailClickedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailRepliedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   emailError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailTemplateId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  emailSenderId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  emailMessageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   emailTemplateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   emailSubject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   emailBody?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -607,9 +641,12 @@ export type LeadCreateManyInput = {
   emailStatus?: string
   emailScheduledAt?: Date | string | null
   emailSentAt?: Date | string | null
+  emailDeliveredAt?: Date | string | null
+  emailOpenedAt?: Date | string | null
+  emailClickedAt?: Date | string | null
+  emailRepliedAt?: Date | string | null
   emailError?: string | null
-  emailTemplateId?: number | null
-  emailSenderId?: number | null
+  emailMessageId?: string | null
   emailTemplateName?: string | null
   emailSubject?: string | null
   emailBody?: string | null
@@ -632,7 +669,12 @@ export type LeadUpdateManyMutationInput = {
   emailStatus?: Prisma.StringFieldUpdateOperationsInput | string
   emailScheduledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   emailSentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailDeliveredAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailOpenedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailClickedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailRepliedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   emailError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  emailMessageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   emailTemplateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   emailSubject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   emailBody?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -656,9 +698,12 @@ export type LeadUncheckedUpdateManyInput = {
   emailStatus?: Prisma.StringFieldUpdateOperationsInput | string
   emailScheduledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   emailSentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailDeliveredAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailOpenedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailClickedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+  emailRepliedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   emailError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailTemplateId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  emailSenderId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  emailMessageId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   emailTemplateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   emailSubject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   emailBody?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -682,9 +727,12 @@ export type LeadCountOrderByAggregateInput = {
   emailStatus?: Prisma.SortOrder
   emailScheduledAt?: Prisma.SortOrder
   emailSentAt?: Prisma.SortOrder
+  emailDeliveredAt?: Prisma.SortOrder
+  emailOpenedAt?: Prisma.SortOrder
+  emailClickedAt?: Prisma.SortOrder
+  emailRepliedAt?: Prisma.SortOrder
   emailError?: Prisma.SortOrder
-  emailTemplateId?: Prisma.SortOrder
-  emailSenderId?: Prisma.SortOrder
+  emailMessageId?: Prisma.SortOrder
   emailTemplateName?: Prisma.SortOrder
   emailSubject?: Prisma.SortOrder
   emailBody?: Prisma.SortOrder
@@ -696,8 +744,6 @@ export type LeadCountOrderByAggregateInput = {
 
 export type LeadAvgOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  emailTemplateId?: Prisma.SortOrder
-  emailSenderId?: Prisma.SortOrder
 }
 
 export type LeadMaxOrderByAggregateInput = {
@@ -714,9 +760,12 @@ export type LeadMaxOrderByAggregateInput = {
   emailStatus?: Prisma.SortOrder
   emailScheduledAt?: Prisma.SortOrder
   emailSentAt?: Prisma.SortOrder
+  emailDeliveredAt?: Prisma.SortOrder
+  emailOpenedAt?: Prisma.SortOrder
+  emailClickedAt?: Prisma.SortOrder
+  emailRepliedAt?: Prisma.SortOrder
   emailError?: Prisma.SortOrder
-  emailTemplateId?: Prisma.SortOrder
-  emailSenderId?: Prisma.SortOrder
+  emailMessageId?: Prisma.SortOrder
   emailTemplateName?: Prisma.SortOrder
   emailSubject?: Prisma.SortOrder
   emailBody?: Prisma.SortOrder
@@ -740,9 +789,12 @@ export type LeadMinOrderByAggregateInput = {
   emailStatus?: Prisma.SortOrder
   emailScheduledAt?: Prisma.SortOrder
   emailSentAt?: Prisma.SortOrder
+  emailDeliveredAt?: Prisma.SortOrder
+  emailOpenedAt?: Prisma.SortOrder
+  emailClickedAt?: Prisma.SortOrder
+  emailRepliedAt?: Prisma.SortOrder
   emailError?: Prisma.SortOrder
-  emailTemplateId?: Prisma.SortOrder
-  emailSenderId?: Prisma.SortOrder
+  emailMessageId?: Prisma.SortOrder
   emailTemplateName?: Prisma.SortOrder
   emailSubject?: Prisma.SortOrder
   emailBody?: Prisma.SortOrder
@@ -754,18 +806,6 @@ export type LeadMinOrderByAggregateInput = {
 
 export type LeadSumOrderByAggregateInput = {
   id?: Prisma.SortOrder
-  emailTemplateId?: Prisma.SortOrder
-  emailSenderId?: Prisma.SortOrder
-}
-
-export type LeadListRelationFilter = {
-  every?: Prisma.LeadWhereInput
-  some?: Prisma.LeadWhereInput
-  none?: Prisma.LeadWhereInput
-}
-
-export type LeadOrderByRelationAggregateInput = {
-  _count?: Prisma.SortOrder
 }
 
 export type StringFieldUpdateOperationsInput = {
@@ -796,475 +836,6 @@ export type IntFieldUpdateOperationsInput = {
   divide?: number
 }
 
-export type NullableIntFieldUpdateOperationsInput = {
-  set?: number | null
-  increment?: number
-  decrement?: number
-  multiply?: number
-  divide?: number
-}
-
-export type LeadCreateNestedManyWithoutEmailTemplateInput = {
-  create?: Prisma.XOR<Prisma.LeadCreateWithoutEmailTemplateInput, Prisma.LeadUncheckedCreateWithoutEmailTemplateInput> | Prisma.LeadCreateWithoutEmailTemplateInput[] | Prisma.LeadUncheckedCreateWithoutEmailTemplateInput[]
-  connectOrCreate?: Prisma.LeadCreateOrConnectWithoutEmailTemplateInput | Prisma.LeadCreateOrConnectWithoutEmailTemplateInput[]
-  createMany?: Prisma.LeadCreateManyEmailTemplateInputEnvelope
-  connect?: Prisma.LeadWhereUniqueInput | Prisma.LeadWhereUniqueInput[]
-}
-
-export type LeadUncheckedCreateNestedManyWithoutEmailTemplateInput = {
-  create?: Prisma.XOR<Prisma.LeadCreateWithoutEmailTemplateInput, Prisma.LeadUncheckedCreateWithoutEmailTemplateInput> | Prisma.LeadCreateWithoutEmailTemplateInput[] | Prisma.LeadUncheckedCreateWithoutEmailTemplateInput[]
-  connectOrCreate?: Prisma.LeadCreateOrConnectWithoutEmailTemplateInput | Prisma.LeadCreateOrConnectWithoutEmailTemplateInput[]
-  createMany?: Prisma.LeadCreateManyEmailTemplateInputEnvelope
-  connect?: Prisma.LeadWhereUniqueInput | Prisma.LeadWhereUniqueInput[]
-}
-
-export type LeadUpdateManyWithoutEmailTemplateNestedInput = {
-  create?: Prisma.XOR<Prisma.LeadCreateWithoutEmailTemplateInput, Prisma.LeadUncheckedCreateWithoutEmailTemplateInput> | Prisma.LeadCreateWithoutEmailTemplateInput[] | Prisma.LeadUncheckedCreateWithoutEmailTemplateInput[]
-  connectOrCreate?: Prisma.LeadCreateOrConnectWithoutEmailTemplateInput | Prisma.LeadCreateOrConnectWithoutEmailTemplateInput[]
-  upsert?: Prisma.LeadUpsertWithWhereUniqueWithoutEmailTemplateInput | Prisma.LeadUpsertWithWhereUniqueWithoutEmailTemplateInput[]
-  createMany?: Prisma.LeadCreateManyEmailTemplateInputEnvelope
-  set?: Prisma.LeadWhereUniqueInput | Prisma.LeadWhereUniqueInput[]
-  disconnect?: Prisma.LeadWhereUniqueInput | Prisma.LeadWhereUniqueInput[]
-  delete?: Prisma.LeadWhereUniqueInput | Prisma.LeadWhereUniqueInput[]
-  connect?: Prisma.LeadWhereUniqueInput | Prisma.LeadWhereUniqueInput[]
-  update?: Prisma.LeadUpdateWithWhereUniqueWithoutEmailTemplateInput | Prisma.LeadUpdateWithWhereUniqueWithoutEmailTemplateInput[]
-  updateMany?: Prisma.LeadUpdateManyWithWhereWithoutEmailTemplateInput | Prisma.LeadUpdateManyWithWhereWithoutEmailTemplateInput[]
-  deleteMany?: Prisma.LeadScalarWhereInput | Prisma.LeadScalarWhereInput[]
-}
-
-export type LeadUncheckedUpdateManyWithoutEmailTemplateNestedInput = {
-  create?: Prisma.XOR<Prisma.LeadCreateWithoutEmailTemplateInput, Prisma.LeadUncheckedCreateWithoutEmailTemplateInput> | Prisma.LeadCreateWithoutEmailTemplateInput[] | Prisma.LeadUncheckedCreateWithoutEmailTemplateInput[]
-  connectOrCreate?: Prisma.LeadCreateOrConnectWithoutEmailTemplateInput | Prisma.LeadCreateOrConnectWithoutEmailTemplateInput[]
-  upsert?: Prisma.LeadUpsertWithWhereUniqueWithoutEmailTemplateInput | Prisma.LeadUpsertWithWhereUniqueWithoutEmailTemplateInput[]
-  createMany?: Prisma.LeadCreateManyEmailTemplateInputEnvelope
-  set?: Prisma.LeadWhereUniqueInput | Prisma.LeadWhereUniqueInput[]
-  disconnect?: Prisma.LeadWhereUniqueInput | Prisma.LeadWhereUniqueInput[]
-  delete?: Prisma.LeadWhereUniqueInput | Prisma.LeadWhereUniqueInput[]
-  connect?: Prisma.LeadWhereUniqueInput | Prisma.LeadWhereUniqueInput[]
-  update?: Prisma.LeadUpdateWithWhereUniqueWithoutEmailTemplateInput | Prisma.LeadUpdateWithWhereUniqueWithoutEmailTemplateInput[]
-  updateMany?: Prisma.LeadUpdateManyWithWhereWithoutEmailTemplateInput | Prisma.LeadUpdateManyWithWhereWithoutEmailTemplateInput[]
-  deleteMany?: Prisma.LeadScalarWhereInput | Prisma.LeadScalarWhereInput[]
-}
-
-export type LeadCreateNestedManyWithoutEmailSenderInput = {
-  create?: Prisma.XOR<Prisma.LeadCreateWithoutEmailSenderInput, Prisma.LeadUncheckedCreateWithoutEmailSenderInput> | Prisma.LeadCreateWithoutEmailSenderInput[] | Prisma.LeadUncheckedCreateWithoutEmailSenderInput[]
-  connectOrCreate?: Prisma.LeadCreateOrConnectWithoutEmailSenderInput | Prisma.LeadCreateOrConnectWithoutEmailSenderInput[]
-  createMany?: Prisma.LeadCreateManyEmailSenderInputEnvelope
-  connect?: Prisma.LeadWhereUniqueInput | Prisma.LeadWhereUniqueInput[]
-}
-
-export type LeadUncheckedCreateNestedManyWithoutEmailSenderInput = {
-  create?: Prisma.XOR<Prisma.LeadCreateWithoutEmailSenderInput, Prisma.LeadUncheckedCreateWithoutEmailSenderInput> | Prisma.LeadCreateWithoutEmailSenderInput[] | Prisma.LeadUncheckedCreateWithoutEmailSenderInput[]
-  connectOrCreate?: Prisma.LeadCreateOrConnectWithoutEmailSenderInput | Prisma.LeadCreateOrConnectWithoutEmailSenderInput[]
-  createMany?: Prisma.LeadCreateManyEmailSenderInputEnvelope
-  connect?: Prisma.LeadWhereUniqueInput | Prisma.LeadWhereUniqueInput[]
-}
-
-export type LeadUpdateManyWithoutEmailSenderNestedInput = {
-  create?: Prisma.XOR<Prisma.LeadCreateWithoutEmailSenderInput, Prisma.LeadUncheckedCreateWithoutEmailSenderInput> | Prisma.LeadCreateWithoutEmailSenderInput[] | Prisma.LeadUncheckedCreateWithoutEmailSenderInput[]
-  connectOrCreate?: Prisma.LeadCreateOrConnectWithoutEmailSenderInput | Prisma.LeadCreateOrConnectWithoutEmailSenderInput[]
-  upsert?: Prisma.LeadUpsertWithWhereUniqueWithoutEmailSenderInput | Prisma.LeadUpsertWithWhereUniqueWithoutEmailSenderInput[]
-  createMany?: Prisma.LeadCreateManyEmailSenderInputEnvelope
-  set?: Prisma.LeadWhereUniqueInput | Prisma.LeadWhereUniqueInput[]
-  disconnect?: Prisma.LeadWhereUniqueInput | Prisma.LeadWhereUniqueInput[]
-  delete?: Prisma.LeadWhereUniqueInput | Prisma.LeadWhereUniqueInput[]
-  connect?: Prisma.LeadWhereUniqueInput | Prisma.LeadWhereUniqueInput[]
-  update?: Prisma.LeadUpdateWithWhereUniqueWithoutEmailSenderInput | Prisma.LeadUpdateWithWhereUniqueWithoutEmailSenderInput[]
-  updateMany?: Prisma.LeadUpdateManyWithWhereWithoutEmailSenderInput | Prisma.LeadUpdateManyWithWhereWithoutEmailSenderInput[]
-  deleteMany?: Prisma.LeadScalarWhereInput | Prisma.LeadScalarWhereInput[]
-}
-
-export type LeadUncheckedUpdateManyWithoutEmailSenderNestedInput = {
-  create?: Prisma.XOR<Prisma.LeadCreateWithoutEmailSenderInput, Prisma.LeadUncheckedCreateWithoutEmailSenderInput> | Prisma.LeadCreateWithoutEmailSenderInput[] | Prisma.LeadUncheckedCreateWithoutEmailSenderInput[]
-  connectOrCreate?: Prisma.LeadCreateOrConnectWithoutEmailSenderInput | Prisma.LeadCreateOrConnectWithoutEmailSenderInput[]
-  upsert?: Prisma.LeadUpsertWithWhereUniqueWithoutEmailSenderInput | Prisma.LeadUpsertWithWhereUniqueWithoutEmailSenderInput[]
-  createMany?: Prisma.LeadCreateManyEmailSenderInputEnvelope
-  set?: Prisma.LeadWhereUniqueInput | Prisma.LeadWhereUniqueInput[]
-  disconnect?: Prisma.LeadWhereUniqueInput | Prisma.LeadWhereUniqueInput[]
-  delete?: Prisma.LeadWhereUniqueInput | Prisma.LeadWhereUniqueInput[]
-  connect?: Prisma.LeadWhereUniqueInput | Prisma.LeadWhereUniqueInput[]
-  update?: Prisma.LeadUpdateWithWhereUniqueWithoutEmailSenderInput | Prisma.LeadUpdateWithWhereUniqueWithoutEmailSenderInput[]
-  updateMany?: Prisma.LeadUpdateManyWithWhereWithoutEmailSenderInput | Prisma.LeadUpdateManyWithWhereWithoutEmailSenderInput[]
-  deleteMany?: Prisma.LeadScalarWhereInput | Prisma.LeadScalarWhereInput[]
-}
-
-export type LeadCreateWithoutEmailTemplateInput = {
-  sector: string
-  website: string
-  location?: string | null
-  phone?: string | null
-  email?: string | null
-  googleBusinessProfile?: string | null
-  verificationStatus?: string
-  isVerified?: boolean
-  verifiedAt?: Date | string | null
-  emailStatus?: string
-  emailScheduledAt?: Date | string | null
-  emailSentAt?: Date | string | null
-  emailError?: string | null
-  emailTemplateName?: string | null
-  emailSubject?: string | null
-  emailBody?: string | null
-  emailSenderName?: string | null
-  emailSenderAddress?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  emailSender?: Prisma.EmailSenderCreateNestedOneWithoutLeadsInput
-}
-
-export type LeadUncheckedCreateWithoutEmailTemplateInput = {
-  id?: number
-  sector: string
-  website: string
-  location?: string | null
-  phone?: string | null
-  email?: string | null
-  googleBusinessProfile?: string | null
-  verificationStatus?: string
-  isVerified?: boolean
-  verifiedAt?: Date | string | null
-  emailStatus?: string
-  emailScheduledAt?: Date | string | null
-  emailSentAt?: Date | string | null
-  emailError?: string | null
-  emailSenderId?: number | null
-  emailTemplateName?: string | null
-  emailSubject?: string | null
-  emailBody?: string | null
-  emailSenderName?: string | null
-  emailSenderAddress?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-}
-
-export type LeadCreateOrConnectWithoutEmailTemplateInput = {
-  where: Prisma.LeadWhereUniqueInput
-  create: Prisma.XOR<Prisma.LeadCreateWithoutEmailTemplateInput, Prisma.LeadUncheckedCreateWithoutEmailTemplateInput>
-}
-
-export type LeadCreateManyEmailTemplateInputEnvelope = {
-  data: Prisma.LeadCreateManyEmailTemplateInput | Prisma.LeadCreateManyEmailTemplateInput[]
-  skipDuplicates?: boolean
-}
-
-export type LeadUpsertWithWhereUniqueWithoutEmailTemplateInput = {
-  where: Prisma.LeadWhereUniqueInput
-  update: Prisma.XOR<Prisma.LeadUpdateWithoutEmailTemplateInput, Prisma.LeadUncheckedUpdateWithoutEmailTemplateInput>
-  create: Prisma.XOR<Prisma.LeadCreateWithoutEmailTemplateInput, Prisma.LeadUncheckedCreateWithoutEmailTemplateInput>
-}
-
-export type LeadUpdateWithWhereUniqueWithoutEmailTemplateInput = {
-  where: Prisma.LeadWhereUniqueInput
-  data: Prisma.XOR<Prisma.LeadUpdateWithoutEmailTemplateInput, Prisma.LeadUncheckedUpdateWithoutEmailTemplateInput>
-}
-
-export type LeadUpdateManyWithWhereWithoutEmailTemplateInput = {
-  where: Prisma.LeadScalarWhereInput
-  data: Prisma.XOR<Prisma.LeadUpdateManyMutationInput, Prisma.LeadUncheckedUpdateManyWithoutEmailTemplateInput>
-}
-
-export type LeadScalarWhereInput = {
-  AND?: Prisma.LeadScalarWhereInput | Prisma.LeadScalarWhereInput[]
-  OR?: Prisma.LeadScalarWhereInput[]
-  NOT?: Prisma.LeadScalarWhereInput | Prisma.LeadScalarWhereInput[]
-  id?: Prisma.IntFilter<"Lead"> | number
-  sector?: Prisma.StringFilter<"Lead"> | string
-  website?: Prisma.StringFilter<"Lead"> | string
-  location?: Prisma.StringNullableFilter<"Lead"> | string | null
-  phone?: Prisma.StringNullableFilter<"Lead"> | string | null
-  email?: Prisma.StringNullableFilter<"Lead"> | string | null
-  googleBusinessProfile?: Prisma.StringNullableFilter<"Lead"> | string | null
-  verificationStatus?: Prisma.StringFilter<"Lead"> | string
-  isVerified?: Prisma.BoolFilter<"Lead"> | boolean
-  verifiedAt?: Prisma.DateTimeNullableFilter<"Lead"> | Date | string | null
-  emailStatus?: Prisma.StringFilter<"Lead"> | string
-  emailScheduledAt?: Prisma.DateTimeNullableFilter<"Lead"> | Date | string | null
-  emailSentAt?: Prisma.DateTimeNullableFilter<"Lead"> | Date | string | null
-  emailError?: Prisma.StringNullableFilter<"Lead"> | string | null
-  emailTemplateId?: Prisma.IntNullableFilter<"Lead"> | number | null
-  emailSenderId?: Prisma.IntNullableFilter<"Lead"> | number | null
-  emailTemplateName?: Prisma.StringNullableFilter<"Lead"> | string | null
-  emailSubject?: Prisma.StringNullableFilter<"Lead"> | string | null
-  emailBody?: Prisma.StringNullableFilter<"Lead"> | string | null
-  emailSenderName?: Prisma.StringNullableFilter<"Lead"> | string | null
-  emailSenderAddress?: Prisma.StringNullableFilter<"Lead"> | string | null
-  createdAt?: Prisma.DateTimeFilter<"Lead"> | Date | string
-  updatedAt?: Prisma.DateTimeFilter<"Lead"> | Date | string
-}
-
-export type LeadCreateWithoutEmailSenderInput = {
-  sector: string
-  website: string
-  location?: string | null
-  phone?: string | null
-  email?: string | null
-  googleBusinessProfile?: string | null
-  verificationStatus?: string
-  isVerified?: boolean
-  verifiedAt?: Date | string | null
-  emailStatus?: string
-  emailScheduledAt?: Date | string | null
-  emailSentAt?: Date | string | null
-  emailError?: string | null
-  emailTemplateName?: string | null
-  emailSubject?: string | null
-  emailBody?: string | null
-  emailSenderName?: string | null
-  emailSenderAddress?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-  emailTemplate?: Prisma.EmailTemplateCreateNestedOneWithoutLeadsInput
-}
-
-export type LeadUncheckedCreateWithoutEmailSenderInput = {
-  id?: number
-  sector: string
-  website: string
-  location?: string | null
-  phone?: string | null
-  email?: string | null
-  googleBusinessProfile?: string | null
-  verificationStatus?: string
-  isVerified?: boolean
-  verifiedAt?: Date | string | null
-  emailStatus?: string
-  emailScheduledAt?: Date | string | null
-  emailSentAt?: Date | string | null
-  emailError?: string | null
-  emailTemplateId?: number | null
-  emailTemplateName?: string | null
-  emailSubject?: string | null
-  emailBody?: string | null
-  emailSenderName?: string | null
-  emailSenderAddress?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-}
-
-export type LeadCreateOrConnectWithoutEmailSenderInput = {
-  where: Prisma.LeadWhereUniqueInput
-  create: Prisma.XOR<Prisma.LeadCreateWithoutEmailSenderInput, Prisma.LeadUncheckedCreateWithoutEmailSenderInput>
-}
-
-export type LeadCreateManyEmailSenderInputEnvelope = {
-  data: Prisma.LeadCreateManyEmailSenderInput | Prisma.LeadCreateManyEmailSenderInput[]
-  skipDuplicates?: boolean
-}
-
-export type LeadUpsertWithWhereUniqueWithoutEmailSenderInput = {
-  where: Prisma.LeadWhereUniqueInput
-  update: Prisma.XOR<Prisma.LeadUpdateWithoutEmailSenderInput, Prisma.LeadUncheckedUpdateWithoutEmailSenderInput>
-  create: Prisma.XOR<Prisma.LeadCreateWithoutEmailSenderInput, Prisma.LeadUncheckedCreateWithoutEmailSenderInput>
-}
-
-export type LeadUpdateWithWhereUniqueWithoutEmailSenderInput = {
-  where: Prisma.LeadWhereUniqueInput
-  data: Prisma.XOR<Prisma.LeadUpdateWithoutEmailSenderInput, Prisma.LeadUncheckedUpdateWithoutEmailSenderInput>
-}
-
-export type LeadUpdateManyWithWhereWithoutEmailSenderInput = {
-  where: Prisma.LeadScalarWhereInput
-  data: Prisma.XOR<Prisma.LeadUpdateManyMutationInput, Prisma.LeadUncheckedUpdateManyWithoutEmailSenderInput>
-}
-
-export type LeadCreateManyEmailTemplateInput = {
-  id?: number
-  sector: string
-  website: string
-  location?: string | null
-  phone?: string | null
-  email?: string | null
-  googleBusinessProfile?: string | null
-  verificationStatus?: string
-  isVerified?: boolean
-  verifiedAt?: Date | string | null
-  emailStatus?: string
-  emailScheduledAt?: Date | string | null
-  emailSentAt?: Date | string | null
-  emailError?: string | null
-  emailSenderId?: number | null
-  emailTemplateName?: string | null
-  emailSubject?: string | null
-  emailBody?: string | null
-  emailSenderName?: string | null
-  emailSenderAddress?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-}
-
-export type LeadUpdateWithoutEmailTemplateInput = {
-  sector?: Prisma.StringFieldUpdateOperationsInput | string
-  website?: Prisma.StringFieldUpdateOperationsInput | string
-  location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  googleBusinessProfile?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  verificationStatus?: Prisma.StringFieldUpdateOperationsInput | string
-  isVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  verifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  emailStatus?: Prisma.StringFieldUpdateOperationsInput | string
-  emailScheduledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  emailSentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  emailError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailTemplateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailSubject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailBody?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailSenderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailSenderAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  emailSender?: Prisma.EmailSenderUpdateOneWithoutLeadsNestedInput
-}
-
-export type LeadUncheckedUpdateWithoutEmailTemplateInput = {
-  id?: Prisma.IntFieldUpdateOperationsInput | number
-  sector?: Prisma.StringFieldUpdateOperationsInput | string
-  website?: Prisma.StringFieldUpdateOperationsInput | string
-  location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  googleBusinessProfile?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  verificationStatus?: Prisma.StringFieldUpdateOperationsInput | string
-  isVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  verifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  emailStatus?: Prisma.StringFieldUpdateOperationsInput | string
-  emailScheduledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  emailSentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  emailError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailSenderId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  emailTemplateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailSubject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailBody?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailSenderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailSenderAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-}
-
-export type LeadUncheckedUpdateManyWithoutEmailTemplateInput = {
-  id?: Prisma.IntFieldUpdateOperationsInput | number
-  sector?: Prisma.StringFieldUpdateOperationsInput | string
-  website?: Prisma.StringFieldUpdateOperationsInput | string
-  location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  googleBusinessProfile?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  verificationStatus?: Prisma.StringFieldUpdateOperationsInput | string
-  isVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  verifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  emailStatus?: Prisma.StringFieldUpdateOperationsInput | string
-  emailScheduledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  emailSentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  emailError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailSenderId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  emailTemplateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailSubject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailBody?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailSenderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailSenderAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-}
-
-export type LeadCreateManyEmailSenderInput = {
-  id?: number
-  sector: string
-  website: string
-  location?: string | null
-  phone?: string | null
-  email?: string | null
-  googleBusinessProfile?: string | null
-  verificationStatus?: string
-  isVerified?: boolean
-  verifiedAt?: Date | string | null
-  emailStatus?: string
-  emailScheduledAt?: Date | string | null
-  emailSentAt?: Date | string | null
-  emailError?: string | null
-  emailTemplateId?: number | null
-  emailTemplateName?: string | null
-  emailSubject?: string | null
-  emailBody?: string | null
-  emailSenderName?: string | null
-  emailSenderAddress?: string | null
-  createdAt?: Date | string
-  updatedAt?: Date | string
-}
-
-export type LeadUpdateWithoutEmailSenderInput = {
-  sector?: Prisma.StringFieldUpdateOperationsInput | string
-  website?: Prisma.StringFieldUpdateOperationsInput | string
-  location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  googleBusinessProfile?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  verificationStatus?: Prisma.StringFieldUpdateOperationsInput | string
-  isVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  verifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  emailStatus?: Prisma.StringFieldUpdateOperationsInput | string
-  emailScheduledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  emailSentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  emailError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailTemplateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailSubject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailBody?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailSenderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailSenderAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  emailTemplate?: Prisma.EmailTemplateUpdateOneWithoutLeadsNestedInput
-}
-
-export type LeadUncheckedUpdateWithoutEmailSenderInput = {
-  id?: Prisma.IntFieldUpdateOperationsInput | number
-  sector?: Prisma.StringFieldUpdateOperationsInput | string
-  website?: Prisma.StringFieldUpdateOperationsInput | string
-  location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  googleBusinessProfile?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  verificationStatus?: Prisma.StringFieldUpdateOperationsInput | string
-  isVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  verifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  emailStatus?: Prisma.StringFieldUpdateOperationsInput | string
-  emailScheduledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  emailSentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  emailError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailTemplateId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  emailTemplateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailSubject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailBody?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailSenderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailSenderAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-}
-
-export type LeadUncheckedUpdateManyWithoutEmailSenderInput = {
-  id?: Prisma.IntFieldUpdateOperationsInput | number
-  sector?: Prisma.StringFieldUpdateOperationsInput | string
-  website?: Prisma.StringFieldUpdateOperationsInput | string
-  location?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  email?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  googleBusinessProfile?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  verificationStatus?: Prisma.StringFieldUpdateOperationsInput | string
-  isVerified?: Prisma.BoolFieldUpdateOperationsInput | boolean
-  verifiedAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  emailStatus?: Prisma.StringFieldUpdateOperationsInput | string
-  emailScheduledAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  emailSentAt?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
-  emailError?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailTemplateId?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
-  emailTemplateName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailSubject?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailBody?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailSenderName?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  emailSenderAddress?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-  updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
-}
-
 
 
 export type LeadSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -1281,9 +852,12 @@ export type LeadSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   emailStatus?: boolean
   emailScheduledAt?: boolean
   emailSentAt?: boolean
+  emailDeliveredAt?: boolean
+  emailOpenedAt?: boolean
+  emailClickedAt?: boolean
+  emailRepliedAt?: boolean
   emailError?: boolean
-  emailTemplateId?: boolean
-  emailSenderId?: boolean
+  emailMessageId?: boolean
   emailTemplateName?: boolean
   emailSubject?: boolean
   emailBody?: boolean
@@ -1291,8 +865,6 @@ export type LeadSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   emailSenderAddress?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  emailTemplate?: boolean | Prisma.Lead$emailTemplateArgs<ExtArgs>
-  emailSender?: boolean | Prisma.Lead$emailSenderArgs<ExtArgs>
 }, ExtArgs["result"]["lead"]>
 
 export type LeadSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -1309,9 +881,12 @@ export type LeadSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   emailStatus?: boolean
   emailScheduledAt?: boolean
   emailSentAt?: boolean
+  emailDeliveredAt?: boolean
+  emailOpenedAt?: boolean
+  emailClickedAt?: boolean
+  emailRepliedAt?: boolean
   emailError?: boolean
-  emailTemplateId?: boolean
-  emailSenderId?: boolean
+  emailMessageId?: boolean
   emailTemplateName?: boolean
   emailSubject?: boolean
   emailBody?: boolean
@@ -1319,8 +894,6 @@ export type LeadSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   emailSenderAddress?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  emailTemplate?: boolean | Prisma.Lead$emailTemplateArgs<ExtArgs>
-  emailSender?: boolean | Prisma.Lead$emailSenderArgs<ExtArgs>
 }, ExtArgs["result"]["lead"]>
 
 export type LeadSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -1337,9 +910,12 @@ export type LeadSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   emailStatus?: boolean
   emailScheduledAt?: boolean
   emailSentAt?: boolean
+  emailDeliveredAt?: boolean
+  emailOpenedAt?: boolean
+  emailClickedAt?: boolean
+  emailRepliedAt?: boolean
   emailError?: boolean
-  emailTemplateId?: boolean
-  emailSenderId?: boolean
+  emailMessageId?: boolean
   emailTemplateName?: boolean
   emailSubject?: boolean
   emailBody?: boolean
@@ -1347,8 +923,6 @@ export type LeadSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   emailSenderAddress?: boolean
   createdAt?: boolean
   updatedAt?: boolean
-  emailTemplate?: boolean | Prisma.Lead$emailTemplateArgs<ExtArgs>
-  emailSender?: boolean | Prisma.Lead$emailSenderArgs<ExtArgs>
 }, ExtArgs["result"]["lead"]>
 
 export type LeadSelectScalar = {
@@ -1365,9 +939,12 @@ export type LeadSelectScalar = {
   emailStatus?: boolean
   emailScheduledAt?: boolean
   emailSentAt?: boolean
+  emailDeliveredAt?: boolean
+  emailOpenedAt?: boolean
+  emailClickedAt?: boolean
+  emailRepliedAt?: boolean
   emailError?: boolean
-  emailTemplateId?: boolean
-  emailSenderId?: boolean
+  emailMessageId?: boolean
   emailTemplateName?: boolean
   emailSubject?: boolean
   emailBody?: boolean
@@ -1377,26 +954,11 @@ export type LeadSelectScalar = {
   updatedAt?: boolean
 }
 
-export type LeadOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "sector" | "website" | "location" | "phone" | "email" | "googleBusinessProfile" | "verificationStatus" | "isVerified" | "verifiedAt" | "emailStatus" | "emailScheduledAt" | "emailSentAt" | "emailError" | "emailTemplateId" | "emailSenderId" | "emailTemplateName" | "emailSubject" | "emailBody" | "emailSenderName" | "emailSenderAddress" | "createdAt" | "updatedAt", ExtArgs["result"]["lead"]>
-export type LeadInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  emailTemplate?: boolean | Prisma.Lead$emailTemplateArgs<ExtArgs>
-  emailSender?: boolean | Prisma.Lead$emailSenderArgs<ExtArgs>
-}
-export type LeadIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  emailTemplate?: boolean | Prisma.Lead$emailTemplateArgs<ExtArgs>
-  emailSender?: boolean | Prisma.Lead$emailSenderArgs<ExtArgs>
-}
-export type LeadIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  emailTemplate?: boolean | Prisma.Lead$emailTemplateArgs<ExtArgs>
-  emailSender?: boolean | Prisma.Lead$emailSenderArgs<ExtArgs>
-}
+export type LeadOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "sector" | "website" | "location" | "phone" | "email" | "googleBusinessProfile" | "verificationStatus" | "isVerified" | "verifiedAt" | "emailStatus" | "emailScheduledAt" | "emailSentAt" | "emailDeliveredAt" | "emailOpenedAt" | "emailClickedAt" | "emailRepliedAt" | "emailError" | "emailMessageId" | "emailTemplateName" | "emailSubject" | "emailBody" | "emailSenderName" | "emailSenderAddress" | "createdAt" | "updatedAt", ExtArgs["result"]["lead"]>
 
 export type $LeadPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Lead"
-  objects: {
-    emailTemplate: Prisma.$EmailTemplatePayload<ExtArgs> | null
-    emailSender: Prisma.$EmailSenderPayload<ExtArgs> | null
-  }
+  objects: {}
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: number
     sector: string
@@ -1411,9 +973,12 @@ export type $LeadPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     emailStatus: string
     emailScheduledAt: Date | null
     emailSentAt: Date | null
+    emailDeliveredAt: Date | null
+    emailOpenedAt: Date | null
+    emailClickedAt: Date | null
+    emailRepliedAt: Date | null
     emailError: string | null
-    emailTemplateId: number | null
-    emailSenderId: number | null
+    emailMessageId: string | null
     emailTemplateName: string | null
     emailSubject: string | null
     emailBody: string | null
@@ -1815,8 +1380,6 @@ readonly fields: LeadFieldRefs;
  */
 export interface Prisma__LeadClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
-  emailTemplate<T extends Prisma.Lead$emailTemplateArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Lead$emailTemplateArgs<ExtArgs>>): Prisma.Prisma__EmailTemplateClient<runtime.Types.Result.GetResult<Prisma.$EmailTemplatePayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
-  emailSender<T extends Prisma.Lead$emailSenderArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Lead$emailSenderArgs<ExtArgs>>): Prisma.Prisma__EmailSenderClient<runtime.Types.Result.GetResult<Prisma.$EmailSenderPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | null, null, ExtArgs, GlobalOmitOptions>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1859,9 +1422,12 @@ export interface LeadFieldRefs {
   readonly emailStatus: Prisma.FieldRef<"Lead", 'String'>
   readonly emailScheduledAt: Prisma.FieldRef<"Lead", 'DateTime'>
   readonly emailSentAt: Prisma.FieldRef<"Lead", 'DateTime'>
+  readonly emailDeliveredAt: Prisma.FieldRef<"Lead", 'DateTime'>
+  readonly emailOpenedAt: Prisma.FieldRef<"Lead", 'DateTime'>
+  readonly emailClickedAt: Prisma.FieldRef<"Lead", 'DateTime'>
+  readonly emailRepliedAt: Prisma.FieldRef<"Lead", 'DateTime'>
   readonly emailError: Prisma.FieldRef<"Lead", 'String'>
-  readonly emailTemplateId: Prisma.FieldRef<"Lead", 'Int'>
-  readonly emailSenderId: Prisma.FieldRef<"Lead", 'Int'>
+  readonly emailMessageId: Prisma.FieldRef<"Lead", 'String'>
   readonly emailTemplateName: Prisma.FieldRef<"Lead", 'String'>
   readonly emailSubject: Prisma.FieldRef<"Lead", 'String'>
   readonly emailBody: Prisma.FieldRef<"Lead", 'String'>
@@ -1886,10 +1452,6 @@ export type LeadFindUniqueArgs<ExtArgs extends runtime.Types.Extensions.Internal
    */
   omit?: Prisma.LeadOmit<ExtArgs> | null
   /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.LeadInclude<ExtArgs> | null
-  /**
    * Filter, which Lead to fetch.
    */
   where: Prisma.LeadWhereUniqueInput
@@ -1908,10 +1470,6 @@ export type LeadFindUniqueOrThrowArgs<ExtArgs extends runtime.Types.Extensions.I
    */
   omit?: Prisma.LeadOmit<ExtArgs> | null
   /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.LeadInclude<ExtArgs> | null
-  /**
    * Filter, which Lead to fetch.
    */
   where: Prisma.LeadWhereUniqueInput
@@ -1929,10 +1487,6 @@ export type LeadFindFirstArgs<ExtArgs extends runtime.Types.Extensions.InternalA
    * Omit specific fields from the Lead
    */
   omit?: Prisma.LeadOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.LeadInclude<ExtArgs> | null
   /**
    * Filter, which Lead to fetch.
    */
@@ -1982,10 +1536,6 @@ export type LeadFindFirstOrThrowArgs<ExtArgs extends runtime.Types.Extensions.In
    */
   omit?: Prisma.LeadOmit<ExtArgs> | null
   /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.LeadInclude<ExtArgs> | null
-  /**
    * Filter, which Lead to fetch.
    */
   where?: Prisma.LeadWhereInput
@@ -2033,10 +1583,6 @@ export type LeadFindManyArgs<ExtArgs extends runtime.Types.Extensions.InternalAr
    * Omit specific fields from the Lead
    */
   omit?: Prisma.LeadOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.LeadInclude<ExtArgs> | null
   /**
    * Filter, which Leads to fetch.
    */
@@ -2086,10 +1632,6 @@ export type LeadCreateArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs
    */
   omit?: Prisma.LeadOmit<ExtArgs> | null
   /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.LeadInclude<ExtArgs> | null
-  /**
    * The data needed to create a Lead.
    */
   data: Prisma.XOR<Prisma.LeadCreateInput, Prisma.LeadUncheckedCreateInput>
@@ -2123,10 +1665,6 @@ export type LeadCreateManyAndReturnArgs<ExtArgs extends runtime.Types.Extensions
    */
   data: Prisma.LeadCreateManyInput | Prisma.LeadCreateManyInput[]
   skipDuplicates?: boolean
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.LeadIncludeCreateManyAndReturn<ExtArgs> | null
 }
 
 /**
@@ -2141,10 +1679,6 @@ export type LeadUpdateArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs
    * Omit specific fields from the Lead
    */
   omit?: Prisma.LeadOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.LeadInclude<ExtArgs> | null
   /**
    * The data needed to update a Lead.
    */
@@ -2197,10 +1731,6 @@ export type LeadUpdateManyAndReturnArgs<ExtArgs extends runtime.Types.Extensions
    * Limit how many Leads to update.
    */
   limit?: number
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.LeadIncludeUpdateManyAndReturn<ExtArgs> | null
 }
 
 /**
@@ -2215,10 +1745,6 @@ export type LeadUpsertArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs
    * Omit specific fields from the Lead
    */
   omit?: Prisma.LeadOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.LeadInclude<ExtArgs> | null
   /**
    * The filter to search for the Lead to update in case it exists.
    */
@@ -2246,10 +1772,6 @@ export type LeadDeleteArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs
    */
   omit?: Prisma.LeadOmit<ExtArgs> | null
   /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.LeadInclude<ExtArgs> | null
-  /**
    * Filter which Lead to delete.
    */
   where: Prisma.LeadWhereUniqueInput
@@ -2270,44 +1792,6 @@ export type LeadDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Internal
 }
 
 /**
- * Lead.emailTemplate
- */
-export type Lead$emailTemplateArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the EmailTemplate
-   */
-  select?: Prisma.EmailTemplateSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the EmailTemplate
-   */
-  omit?: Prisma.EmailTemplateOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.EmailTemplateInclude<ExtArgs> | null
-  where?: Prisma.EmailTemplateWhereInput
-}
-
-/**
- * Lead.emailSender
- */
-export type Lead$emailSenderArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
-  /**
-   * Select specific fields to fetch from the EmailSender
-   */
-  select?: Prisma.EmailSenderSelect<ExtArgs> | null
-  /**
-   * Omit specific fields from the EmailSender
-   */
-  omit?: Prisma.EmailSenderOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.EmailSenderInclude<ExtArgs> | null
-  where?: Prisma.EmailSenderWhereInput
-}
-
-/**
  * Lead without action
  */
 export type LeadDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -2319,8 +1803,4 @@ export type LeadDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
    * Omit specific fields from the Lead
    */
   omit?: Prisma.LeadOmit<ExtArgs> | null
-  /**
-   * Choose, which related nodes to fetch as well
-   */
-  include?: Prisma.LeadInclude<ExtArgs> | null
 }

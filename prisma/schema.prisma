@@ -8,72 +8,60 @@ datasource db {
 }
 
 model Lead {
-  id                    Int       @id @default(autoincrement())
+  id                    Int      @id @default(autoincrement())
   sector                String
-  website               String    @unique
+  website               String   @unique
   location              String?
-  phone                 String?   @unique
-  email                 String?   @unique
+  phone                 String?  @unique
+  email                 String?  @unique
   googleBusinessProfile String?
 
-  verificationStatus    String    @default("under_review")
-  isVerified            Boolean   @default(false)
-  verifiedAt            DateTime?
+  // ─────────────────────────────────────
+  // LEAD VERIFICATION
+  // ─────────────────────────────────────
+  verificationStatus String   @default("under_review")
+  isVerified         Boolean  @default(false)
+  verifiedAt         DateTime?
 
-  emailStatus           String    @default("pending")
-  emailScheduledAt      DateTime?
-  emailSentAt           DateTime?
-  emailError            String?
+  // ─────────────────────────────────────
+  // EMAIL LIFECYCLE
+  // pending → scheduled → sent → delivered → replied
+  // failed = sending/delivery failure
+  // ─────────────────────────────────────
+  emailStatus      String    @default("pending")
+  emailScheduledAt DateTime?
+  emailSentAt      DateTime?
+  emailDeliveredAt DateTime?
+  emailOpenedAt    DateTime?
+  emailClickedAt   DateTime?
+  emailRepliedAt   DateTime?
+  emailError       String?
 
-  emailTemplateId       Int?
-  emailSenderId         Int?
-  emailTemplateName     String?
-  emailSubject          String?
-  emailBody             String?
-  emailSenderName       String?
-  emailSenderAddress    String?
+  // Brevo transactional message ID
+  emailMessageId String?
 
-  createdAt              DateTime  @default(now())
-  updatedAt              DateTime  @updatedAt
+  // ─────────────────────────────────────
+  // EMAIL SNAPSHOT / AUDIT
+  // Stores exactly what was used when email
+  // was scheduled/sent.
+  // ─────────────────────────────────────
+  emailTemplateName  String?
+  emailSubject       String?
+  emailBody          String?
+  emailSenderName    String?
+  emailSenderAddress String?
 
-  emailTemplate         EmailTemplate? @relation(
-    fields: [emailTemplateId],
-    references: [id],
-    onDelete: SetNull
-  )
+  // ─────────────────────────────────────
+  // TIMESTAMPS
+  // ─────────────────────────────────────
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  emailSender           EmailSender? @relation(
-    fields: [emailSenderId],
-    references: [id],
-    onDelete: SetNull
-  )
-
+  // ─────────────────────────────────────
+  // INDEXES
+  // ─────────────────────────────────────
   @@index([emailStatus])
   @@index([emailScheduledAt])
   @@index([verificationStatus])
-}
-
-model EmailTemplate {
-  id          Int       @id @default(autoincrement())
-  name        String    @unique
-  subject     String
-  body        String
-  isActive    Boolean   @default(true)
-
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  leads       Lead[]
-}
-
-model EmailSender {
-  id          Int       @id @default(autoincrement())
-  name        String
-  email       String    @unique
-  isActive    Boolean   @default(true)
-
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-
-  leads       Lead[]
+  @@index([emailMessageId])
 }

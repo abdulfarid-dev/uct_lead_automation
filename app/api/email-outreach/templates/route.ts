@@ -1,23 +1,75 @@
 import { NextResponse } from "next/server";
-import prisma from "@/app/lib/prisma";
 
-function cleanString(value: unknown): string {
-  return typeof value === "string" ? value.trim() : "";
+const BREVO_API_URL = "https://api.brevo.com/v3";
+
+function getApiKey() {
+  return process.env.BREVO_API_KEY;
 }
 
-/*
-|--------------------------------------------------------------------------
-| GET - Fetch all templates
-|--------------------------------------------------------------------------
-*/
+export async function GET(request: Request) {
+  const apiKey = getApiKey();
 
-export async function GET() {
+  if (!apiKey) {
+    return NextResponse.json(
+      { success: false, error: "BREVO_API_KEY is not configured." },
+      { status: 500 }
+    );
+  }
+
   try {
-    const templates = await prisma.emailTemplate.findMany({
-      orderBy: {
-        createdAt: "desc",
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get("id");
+
+    const url = id
+      ? `${BREVO_API_URL}/smtp/templates/${encodeURIComponent(id)}`
+      : `${BREVO_API_URL}/smtp/templates?limit=50&offset=0&sort=desc`;
+
+    const response = await fetch(url, {
+      headers: {
+        accept: "application/json",
+        "api-key": apiKey,
       },
+      cache: "no-store",
     });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: data?.message || "Failed to fetch Brevo templates.",
+        },
+        { status: response.status }
+      );
+    }
+
+    if (id) {
+      return NextResponse.json({
+        success: true,
+        template: data,
+      });
+    }
+
+    const templates = Array.isArray(data?.templates)
+      ? data.templates
+          .filter((item: any) => item?.isActive !== false)
+          .map((item: any) => ({
+            id: Number(item.id),
+            name: String(item.name || `Template ${item.id}`),
+            subject: String(item.subject || ""),
+            isActive: item.isActive !== false,
+            sender: item.sender
+              ? {
+                  id: item.sender.id ?? null,
+                  name: String(item.sender.name || ""),
+                  email: String(item.sender.email || ""),
+                }
+              : null,
+            modifiedAt: item.modifiedAt || null,
+            templateId: Number(item.id),
+          }))
+      : [];
 
     return NextResponse.json({
       success: true,
@@ -25,279 +77,10 @@ export async function GET() {
       total: templates.length,
     });
   } catch (error) {
-    console.error(
-      "GET /api/email-outreach/templates error:",
-      error
-    );
+    console.error("GET /api/email-outreach/templates error:", error);
 
     return NextResponse.json(
-      {
-        success: false,
-        error: "Failed to fetch email templates.",
-      },
-      { status: 500 }
-    );
-  }
-}
-
-/*
-|--------------------------------------------------------------------------
-| POST - Create template
-|--------------------------------------------------------------------------
-*/
-
-export async function POST(request: Request) {
-  try {
-    const body = await request.json();
-
-    const name = cleanString(body?.name);
-    const subject = cleanString(body?.subject);
-    const message = cleanString(body?.body);
-
-    if (!name) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Template name is required.",
-        },
-        { status: 400 }
-      );
-    }
-
-    if (!subject) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Email subject is required.",
-        },
-        { status: 400 }
-      );
-    }
-
-    if (!message) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Email message is required.",
-        },
-        { status: 400 }
-      );
-    }
-
-    const existing = await prisma.emailTemplate.findUnique({
-      where: {
-        name,
-      },
-    });
-
-    if (existing) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "A template with this name already exists.",
-        },
-        { status: 409 }
-      );
-    }
-
-    const template = await prisma.emailTemplate.create({
-      data: {
-        name,
-        subject,
-        body: message,
-        isActive: true,
-      },
-    });
-
-    return NextResponse.json(
-      {
-        success: true,
-        message: "Email template created successfully.",
-        template,
-      },
-      { status: 201 }
-    );
-  } catch (error) {
-    console.error(
-      "POST /api/email-outreach/templates error:",
-      error
-    );
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: "Failed to create email template.",
-      },
-      { status: 500 }
-    );
-  }
-}
-
-/*
-|--------------------------------------------------------------------------
-| PATCH - Edit template
-|--------------------------------------------------------------------------
-*/
-
-export async function PATCH(request: Request) {
-  try {
-    const body = await request.json();
-
-    const id = Number(body?.id);
-
-    if (!Number.isInteger(id) || id <= 0) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Valid template ID is required.",
-        },
-        { status: 400 }
-      );
-    }
-
-    const existing = await prisma.emailTemplate.findUnique({
-      where: { id },
-    });
-
-    if (!existing) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Template not found.",
-        },
-        { status: 404 }
-      );
-    }
-
-    const name =
-      body?.name !== undefined
-        ? cleanString(body.name)
-        : existing.name;
-
-    const subject =
-      body?.subject !== undefined
-        ? cleanString(body.subject)
-        : existing.subject;
-
-    const message =
-      body?.body !== undefined
-        ? cleanString(body.body)
-        : existing.body;
-
-    if (!name || !subject || !message) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Name, subject and message are required.",
-        },
-        { status: 400 }
-      );
-    }
-
-    const duplicate = await prisma.emailTemplate.findFirst({
-      where: {
-        name,
-        NOT: {
-          id,
-        },
-      },
-    });
-
-    if (duplicate) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Another template already uses this name.",
-        },
-        { status: 409 }
-      );
-    }
-
-    const template = await prisma.emailTemplate.update({
-      where: { id },
-      data: {
-        name,
-        subject,
-        body: message,
-      },
-    });
-
-    return NextResponse.json({
-      success: true,
-      message: "Email template updated successfully.",
-      template,
-    });
-  } catch (error) {
-    console.error(
-      "PATCH /api/email-outreach/templates error:",
-      error
-    );
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: "Failed to update email template.",
-      },
-      { status: 500 }
-    );
-  }
-}
-
-/*
-|--------------------------------------------------------------------------
-| DELETE - Delete template
-|--------------------------------------------------------------------------
-*/
-
-export async function DELETE(request: Request) {
-  try {
-    const { searchParams } = new URL(request.url);
-
-    const id = Number(searchParams.get("id"));
-
-    if (!Number.isInteger(id) || id <= 0) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Valid template ID is required.",
-        },
-        { status: 400 }
-      );
-    }
-
-    const template = await prisma.emailTemplate.findUnique({
-      where: { id },
-    });
-
-    if (!template) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: "Template not found.",
-        },
-        { status: 404 }
-      );
-    }
-
-    await prisma.emailTemplate.delete({
-      where: { id },
-    });
-
-    return NextResponse.json({
-      success: true,
-      message: "Email template deleted successfully.",
-    });
-  } catch (error) {
-    console.error(
-      "DELETE /api/email-outreach/templates error:",
-      error
-    );
-
-    return NextResponse.json(
-      {
-        success: false,
-        error: "Failed to delete email template.",
-      },
+      { success: false, error: "Failed to fetch Brevo templates." },
       { status: 500 }
     );
   }
