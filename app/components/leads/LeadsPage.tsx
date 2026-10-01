@@ -31,7 +31,11 @@ export interface Lead {
   phone: string;
   email: string;
   googleBusinessProfile: string;
-  verificationStatus: "under_review" | "verified" | "rejected";
+  verificationStatus:
+  | "under_review"
+  | "verified"
+  | "rejected"
+  | "sent";
 }
 
 type MessageType = "success" | "error" | "info";
@@ -86,11 +90,12 @@ function normalizeLead(value: unknown): Lead {
         ? lead.googleBusinessProfile
         : "",
 
-    verificationStatus:
-      lead.verificationStatus === "verified" ||
-      lead.verificationStatus === "rejected"
-        ? lead.verificationStatus
-        : "under_review",
+   verificationStatus:
+  lead.verificationStatus === "verified" ||
+  lead.verificationStatus === "rejected" ||
+  lead.verificationStatus === "sent"
+    ? lead.verificationStatus
+    : "under_review",
   };
 }
 
@@ -809,6 +814,9 @@ export default function LeadsPage() {
                             </option>
                             <option value="verified">
                               Verified
+                            </option>
+                            <option value="sent">
+                              Sent
                             </option>
                             <option value="rejected">
                               Rejected

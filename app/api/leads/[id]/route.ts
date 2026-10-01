@@ -118,11 +118,12 @@ export async function PATCH(
     /*
      * VALID VERIFICATION STATUS
      */
-    const allowedStatuses = [
-      "under_review",
-      "verified",
-      "rejected",
-    ];
+   const allowedStatuses = [
+  "under_review",
+  "verified",
+  "rejected",
+  "sent",
+];
 
     if (!allowedStatuses.includes(verificationStatus)) {
       return NextResponse.json(

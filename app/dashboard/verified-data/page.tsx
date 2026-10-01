@@ -22,6 +22,14 @@ type Lead = {
   createdAt: string;
 };
 
+type ExportLead = {
+  sector: string;
+  website: string;
+  email: string;
+  phone: string;
+  verificationStatus: "verified" | "sent";
+};
+
 export default function VerifiedDataPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [search, setSearch] = useState("");
@@ -31,20 +39,30 @@ export default function VerifiedDataPage() {
   useEffect(() => {
     async function loadVerifiedData() {
       try {
-        const response = await fetch("/api/verified-data", {
-          method: "GET",
-          cache: "no-store",
-        });
+        const response = await fetch(
+          "/api/verified-data",
+          {
+            method: "GET",
+            cache: "no-store",
+          }
+        );
 
         if (!response.ok) {
-          throw new Error("Failed to fetch verified data");
+          throw new Error(
+            "Failed to fetch verified data"
+          );
         }
 
         const data = await response.json();
 
-        setLeads(Array.isArray(data) ? data : []);
+        setLeads(
+          Array.isArray(data) ? data : []
+        );
       } catch (error) {
-        console.error("Verified data fetch error:", error);
+        console.error(
+          "Verified data fetch error:",
+          error
+        );
         setLeads([]);
       } finally {
         setLoading(false);
@@ -55,158 +73,179 @@ export default function VerifiedDataPage() {
   }, []);
 
   const filteredLeads = useMemo(() => {
-    const value = search.trim().toLowerCase();
+    const value = search
+      .trim()
+      .toLowerCase();
 
     if (!value) {
       return leads;
     }
 
     return leads.filter((lead) => {
-      const searchableFields = [
+      const fields = [
         lead.sector,
         lead.website,
-        lead.location,
-        lead.phone,
         lead.email,
-        lead.googleBusinessProfile,
+        lead.phone,
       ];
 
-      return searchableFields
+      return fields
         .filter(Boolean)
         .some((field) =>
-          String(field).toLowerCase().includes(value)
+          String(field)
+            .toLowerCase()
+            .includes(value)
         );
     });
   }, [leads, search]);
 
-  function formatDate(value: string | null) {
-    if (!value) {
-      return "—";
+  function getStatusLabel(status: string) {
+    return status === "sent"
+      ? "Already Sent"
+      : "Verified";
+  }
+
+  async function handleExportToGoogleSheets() {
+    if (filteredLeads.length === 0) {
+      alert(
+        "There is no verified data to export."
+      );
+      return;
     }
 
-    return new Date(value).toLocaleDateString("en-IN", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
-  }
-
-   async function handleExportToGoogleSheets() {
-  if (filteredLeads.length === 0) {
-    alert("There is no verified data to export.");
-    return;
-  }
-
-  setExporting(true);
-
-  try {
-    const response = await fetch("/api/verified-data/export", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        source: "uct-lead-research",
-        type: "verified-data-export",
-        exportedAt: new Date().toISOString(),
-        totalLeads: filteredLeads.length,
-        leads: filteredLeads,
-      }),
-      cache: "no-store",
-    });
-
-    const responseText = await response.text();
-
-    let result: {
-      success?: boolean;
-      error?: string;
-      details?: unknown;
-      result?: unknown;
-    } = {};
+    setExporting(true);
 
     try {
-      result = responseText ? JSON.parse(responseText) : {};
-    } catch {
-      result = {
-        error: responseText || "Unknown export error",
-      };
-    }
+      const exportLeads: ExportLead[] =
+        filteredLeads.map((lead) => ({
+          sector: lead.sector || "",
+          website: lead.website || "",
+          email: lead.email || "",
+          phone: lead.phone || "",
+          verificationStatus:
+            lead.verificationStatus ===
+            "sent"
+              ? "sent"
+              : "verified",
+        }));
 
-    if (!response.ok || result.success === false) {
-      console.error("Verified data export API error:", result);
-
-      const details =
-        typeof result.details === "string"
-          ? result.details
-          : result.details
-            ? JSON.stringify(result.details)
-            : "";
-
-      throw new Error(
-        result.error ||
-          details ||
-          `Export failed with status ${response.status}`
+      const response = await fetch(
+        "/api/verified-data/export",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            source: "uct-lead-research",
+            type: "verified-data-export",
+            totalLeads:
+              exportLeads.length,
+            leads: exportLeads,
+          }),
+          cache: "no-store",
+        }
       );
+
+      const responseText =
+        await response.text();
+
+      let result: {
+        success?: boolean;
+        error?: string;
+        details?: unknown;
+        result?: unknown;
+      } = {};
+
+      try {
+        result = responseText
+          ? JSON.parse(responseText)
+          : {};
+      } catch {
+        result = {
+          error:
+            responseText ||
+            "Unknown export error",
+        };
+      }
+
+      if (
+        !response.ok ||
+        result.success === false
+      ) {
+        throw new Error(
+          result.error ||
+            "Google Sheets export failed."
+        );
+      }
+
+      const googleSheetUrl =
+        "https://docs.google.com/spreadsheets/d/1ajE7mXomEMEndGVg8XHVN0sS6Ba45c1Vf2LSE1_k6sU/edit?gid=0";
+
+      alert(
+        `${exportLeads.length} lead${
+          exportLeads.length === 1
+            ? ""
+            : "s"
+        } exported successfully.`
+      );
+
+      window.open(
+        googleSheetUrl,
+        "_blank"
+      );
+    } catch (error) {
+      console.error(
+        "Google Sheets export error:",
+        error
+      );
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Google Sheets export failed."
+      );
+    } finally {
+      setExporting(false);
     }
-
-    // New Google Sheet
-    const googleSheetUrl =
-      "https://docs.google.com/spreadsheets/d/1ajE7mXomEMEndGVg8XHVN0sS6Ba45c1Vf2LSE1_k6sU/edit?gid=0";
-
-    alert(
-      `${filteredLeads.length} verified lead${
-        filteredLeads.length === 1 ? "" : "s"
-      } exported successfully.`
-    );
-
-    // Open the actual Google Sheet after successful export
-    window.open(googleSheetUrl, "_blank");
-  } catch (error) {
-    console.error("Google Sheets export error:", error);
-
-    alert(
-      error instanceof Error
-        ? error.message
-        : "Google Sheets export failed."
-    );
-  } finally {
-    setExporting(false);
   }
-}
+
   return (
     <main className="min-h-screen w-full bg-slate-950">
-      <div className="w-full px-6 py-6">
+      <div className="w-full px-4 py-4">
         {/* Header */}
-        <div className="mb-5 flex items-start justify-between gap-4">
-          <div>
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div className="min-w-0">
             <div className="flex items-center gap-2">
               <CheckCircle2
-                size={18}
+                size={16}
                 className="text-emerald-400"
               />
 
-              <h1 className="text-lg font-semibold text-white">
+              <h1 className="text-base font-semibold text-white">
                 All Verified Data
               </h1>
             </div>
 
-            <p className="mt-1 text-xs text-slate-500">
-              All leads manually verified and ready for export.
+            <p className="mt-0.5 text-[10px] text-slate-500">
+              Verified leads ready for outreach
+              and export.
             </p>
           </div>
 
-          {/* Export */}
           <button
             type="button"
-            onClick={handleExportToGoogleSheets}
+            onClick={
+              handleExportToGoogleSheets
+            }
             disabled={
               loading ||
               exporting ||
               filteredLeads.length === 0
             }
-            className="flex h-9 shrink-0 items-center gap-2 rounded-md border border-slate-700 bg-slate-900 px-3 text-xs font-medium text-slate-200 transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+            className="flex h-8 shrink-0 items-center gap-1.5 rounded-md border border-slate-700 bg-slate-900 px-2.5 text-[10px] font-medium text-slate-200 transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <Download size={14} />
+            <Download size={13} />
 
             {exporting
               ? "Exporting..."
@@ -215,72 +254,72 @@ export default function VerifiedDataPage() {
         </div>
 
         {/* Search + Count */}
-        <div className="mb-4 flex w-full items-center justify-between gap-3">
-          <div className="relative w-full max-w-xl">
+        <div className="mb-3 flex items-center justify-between gap-2">
+          <div className="relative w-full max-w-md">
             <Search
-              size={14}
-              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-slate-500"
+              size={13}
+              className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-600"
             />
 
             <input
               type="text"
               value={search}
               onChange={(event) =>
-                setSearch(event.target.value)
+                setSearch(
+                  event.target.value
+                )
               }
-              placeholder="Search company, website, email, sector, location..."
-              className="h-9 w-full rounded-md border border-slate-800 bg-slate-950 pl-9 pr-9 text-xs text-slate-200 outline-none placeholder:text-slate-600 focus:border-blue-500/50"
+              placeholder="Search sector, website, email, phone..."
+              className="h-8 w-full rounded-md border border-slate-800 bg-slate-950 pl-8 pr-8 text-[10px] text-slate-200 outline-none placeholder:text-slate-600 focus:border-blue-500/50"
             />
 
             {search && (
               <button
                 type="button"
                 onClick={() => setSearch("")}
-                aria-label="Clear search"
-                className="absolute right-2 top-1/2 flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded text-slate-500 transition hover:bg-slate-900 hover:text-slate-200"
+                className="absolute right-1.5 top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center text-slate-600 hover:text-slate-300"
               >
-                <X size={13} />
+                <X size={12} />
               </button>
             )}
           </div>
 
-          <div className="shrink-0 rounded-md border border-slate-800 bg-slate-900/60 px-3 py-2 text-[11px] text-slate-400">
+          <div className="shrink-0 rounded-md border border-slate-800 bg-slate-900/60 px-2.5 py-1.5 text-[10px] text-slate-500">
             <span className="font-semibold text-white">
               {filteredLeads.length}
             </span>{" "}
-            {search ? "matching" : "verified"} lead
-            {filteredLeads.length === 1 ? "" : "s"}
+            leads
           </div>
         </div>
 
         {/* Table */}
-        <div className="w-full overflow-hidden rounded-lg border border-slate-800 bg-slate-950">
-          <div className="w-full overflow-x-auto">
-            <table className="w-full min-w-[1050px] border-collapse">
+        <div className="overflow-hidden rounded-lg border border-slate-800 bg-slate-950">
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[900px] border-collapse">
               <thead>
-                <tr className="border-b border-slate-800 bg-slate-900/70 text-left">
-                  <th className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                <tr className="border-b border-slate-800 bg-slate-900/80 text-left">
+                  <th className="w-10 px-2.5 py-2 text-[9px] font-semibold uppercase tracking-wide text-slate-500">
+                    #
+                  </th>
+
+                  <th className="w-[210px] px-2.5 py-2 text-[9px] font-semibold uppercase tracking-wide text-slate-500">
                     Sector
                   </th>
 
-                  <th className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                  <th className="w-[230px] px-2.5 py-2 text-[9px] font-semibold uppercase tracking-wide text-slate-500">
                     Website
                   </th>
 
-                  <th className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-                    Location
-                  </th>
-
-                  <th className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-                    Phone
-                  </th>
-
-                  <th className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                  <th className="w-[280px] px-2.5 py-2 text-[9px] font-semibold uppercase tracking-wide text-slate-500">
                     Email
                   </th>
 
-                  <th className="px-4 py-3 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-                    Verified
+                  <th className="w-[150px] px-2.5 py-2 text-[9px] font-semibold uppercase tracking-wide text-slate-500">
+                    Phone
+                  </th>
+
+                  <th className="w-[130px] px-2.5 py-2 text-[9px] font-semibold uppercase tracking-wide text-slate-500">
+                    Status
                   </th>
                 </tr>
               </thead>
@@ -290,95 +329,107 @@ export default function VerifiedDataPage() {
                   <tr>
                     <td
                       colSpan={6}
-                      className="px-6 py-14 text-center"
+                      className="h-32 text-center"
                     >
-                      <p className="text-sm text-slate-500">
+                      <p className="text-[10px] text-slate-500">
                         Loading verified data...
                       </p>
                     </td>
                   </tr>
                 ) : filteredLeads.length > 0 ? (
-                  filteredLeads.map((lead) => (
-                    <tr
-                      key={lead.id}
-                      className="border-b border-slate-900 last:border-b-0 hover:bg-slate-900/40"
-                    >
-                      {/* Sector */}
-                      <td className="px-4 py-3 text-xs text-slate-200">
-                        {lead.sector || "—"}
-                      </td>
+                  filteredLeads.map(
+                    (lead, index) => {
+                      const status =
+                        getStatusLabel(
+                          lead.verificationStatus
+                        );
 
-                      {/* Website */}
-                      <td className="max-w-[260px] px-4 py-3">
-                        {lead.website ? (
-                          <a
-                            href={
-                              lead.website.startsWith("http")
-                                ? lead.website
-                                : `https://${lead.website}`
-                            }
-                            target="_blank"
-                            rel="noreferrer"
-                            title={lead.website}
-                            className="block truncate text-xs text-blue-400 hover:text-blue-300"
-                          >
-                            {lead.website}
-                          </a>
-                        ) : (
-                          <span className="text-xs text-slate-600">
-                            —
-                          </span>
-                        )}
-                      </td>
-
-                      {/* Location */}
-                      <td className="max-w-[240px] truncate px-4 py-3 text-xs text-slate-400">
-                        {lead.location || "—"}
-                      </td>
-
-                      {/* Phone */}
-                      <td className="px-4 py-3 text-xs text-slate-400">
-                        {lead.phone || "—"}
-                      </td>
-
-                      {/* Email */}
-                      <td className="max-w-[280px] px-4 py-3 text-xs text-slate-400">
-                        <span
-                          className="block truncate"
-                          title={lead.email || ""}
+                      return (
+                        <tr
+                          key={lead.id}
+                          className="border-b border-slate-900 last:border-b-0 hover:bg-slate-900/40"
                         >
-                          {lead.email || "—"}
-                        </span>
-                      </td>
+                          <td className="px-2.5 py-2 text-[10px] font-medium text-slate-600">
+                            {index + 1}
+                          </td>
 
-                      {/* Verified */}
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2">
-                          <CheckCircle2
-                            size={14}
-                            className="text-emerald-400"
-                          />
+                          <td className="max-w-[210px] px-2.5 py-2">
+                            <span
+                              className="block truncate text-[10px] text-slate-200"
+                              title={
+                                lead.sector ||
+                                ""
+                              }
+                            >
+                              {lead.sector || "—"}
+                            </span>
+                          </td>
 
-                          <div>
-                            <p className="text-[11px] font-medium text-emerald-400">
-                              Verified
-                            </p>
+                          <td className="max-w-[230px] px-2.5 py-2">
+                            {lead.website ? (
+                              <a
+                                href={
+                                  lead.website.startsWith(
+                                    "http"
+                                  )
+                                    ? lead.website
+                                    : `https://${lead.website}`
+                                }
+                                target="_blank"
+                                rel="noreferrer"
+                                title={
+                                  lead.website
+                                }
+                                className="block truncate text-[10px] text-blue-400 hover:text-blue-300"
+                              >
+                                {lead.website}
+                              </a>
+                            ) : (
+                              <span className="text-[10px] text-slate-600">
+                                —
+                              </span>
+                            )}
+                          </td>
 
-                            <p className="text-[10px] text-slate-600">
-                              {formatDate(lead.verifiedAt)}
-                            </p>
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
+                          <td className="max-w-[280px] px-2.5 py-2">
+                            <span
+                              className="block truncate text-[10px] text-slate-400"
+                              title={
+                                lead.email ||
+                                ""
+                              }
+                            >
+                              {lead.email || "—"}
+                            </span>
+                          </td>
+
+                          <td className="px-2.5 py-2 text-[10px] text-slate-400">
+                            {lead.phone || "—"}
+                          </td>
+
+                          <td className="px-2.5 py-2">
+                            <span
+                              className={`inline-flex h-6 items-center rounded-md border px-2 text-[9px] font-medium ${
+                                status ===
+                                "Already Sent"
+                                  ? "border-amber-500/30 bg-amber-500/5 text-amber-400"
+                                  : "border-emerald-500/30 bg-emerald-500/5 text-emerald-400"
+                              }`}
+                            >
+                              {status}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    }
+                  )
                 ) : (
                   <tr>
                     <td
                       colSpan={6}
-                      className="px-6 py-14 text-center"
+                      className="h-32 text-center"
                     >
-                      <p className="text-sm text-slate-500">
+                      <p className="text-[10px] text-slate-500">
                         {search
                           ? "No verified leads match your search."
                           : "No verified leads found."}
