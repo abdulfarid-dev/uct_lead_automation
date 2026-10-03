@@ -9,7 +9,6 @@ export async function GET() {
   try {
     const [totalLeads, researchedDomains] = await Promise.all([
       prisma.lead.count(),
-
       prisma.researchDomain.findMany({
         select: {
           domain: true,
@@ -24,7 +23,7 @@ export async function GET() {
       success: true,
       totalLeads,
       researchedDomains: researchedDomains.map(
-        (item) => item.domain
+        ({ domain }) => domain
       ),
     });
   } catch (error) {
@@ -44,29 +43,34 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
 
-    const limit = Number(body.limit ?? 10);
+    const limit = Number(body?.limit ?? 10);
 
     if (!Number.isFinite(limit) || limit < 1) {
       return Response.json(
-        { error: "Research limit must be at least 1." },
+        {
+          success: false,
+          error: "Research limit must be at least 1.",
+        },
         { status: 400 }
       );
     }
 
-    const error = validateResearchRequest({
-      prompt: body.prompt,
+    const validationError = validateResearchRequest({
+      prompt: body?.prompt,
     });
 
-    if (error) {
+    if (validationError) {
       return Response.json(
-        { error },
+        {
+          success: false,
+          error: validationError,
+        },
         { status: 400 }
       );
     }
 
-    // Browser research cache
-    const cachedWebsites = Array.isArray(
-      body.cachedWebsites
+    const cachedWebsites: string[] = Array.isArray(
+      body?.cachedWebsites
     )
       ? body.cachedWebsites
           .filter(
@@ -96,9 +100,8 @@ export async function POST(request: Request) {
           const leads = await runResearch(job, {
             limit: Math.floor(limit),
 
-            // Browser cache is only a fast optimization.
-            // PostgreSQL ResearchDomain remains the permanent source
-            // of truth inside research.ts.
+            // Browser cache is only an optimization.
+            // PostgreSQL remains the permanent source of truth.
             excludedWebsites: new Set(
               cachedWebsites
             ),
@@ -123,8 +126,6 @@ export async function POST(request: Request) {
             totalLeads,
             leads,
           });
-
-          controller.close();
         } catch (error) {
           console.error(
             "Research API error:",
@@ -136,7 +137,7 @@ export async function POST(request: Request) {
             message:
               "Research could not be completed.",
           });
-
+        } finally {
           controller.close();
         }
       },
@@ -144,7 +145,7 @@ export async function POST(request: Request) {
 
     return new Response(stream, {
       headers: {
-        "Content-Type": "text/event-stream",
+        "Content-Type": "text/event-stream; charset=utf-8",
         "Cache-Control": "no-cache, no-transform",
         Connection: "keep-alive",
       },

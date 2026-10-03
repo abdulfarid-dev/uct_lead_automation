@@ -235,15 +235,144 @@ const SOCIAL_DOMAINS = [
 ];
 
 const PUBLISHER_DOMAINS = [
-  "indiafilings.com", "electronicsmedia.info", "economictimes.",
-  "timesofindia.", "business-standard.com", "financialexpress.com",
-  "forbes.com", "yourstory.com", "medium.com", "wordpress.com",
-  "blogspot.com", "moneycontrol.com", "businesswire.com", "globenewswire.com",
-  "prnewswire.com", "reuters.com", "bloomberg.com", "wikipedia.org",
-  "ibef.org", "textileworld.com", "indiantextilejournal.com",
-  "market.us", "marketsandmarkets.com", "mordorintelligence.com",
-];
+  // ─────────────────────────────────────────────
+  // News & Business Publications
+  // ─────────────────────────────────────────────
+  "economictimes.",
+  "timesofindia.",
+  "business-standard.com",
+  "financialexpress.com",
+  "moneycontrol.com",
+  "forbes.com",
+  "reuters.com",
+  "bloomberg.com",
+  "businesswire.com",
+  "globenewswire.com",
+  "prnewswire.com",
+  "yourstory.com",
 
+  // ─────────────────────────────────────────────
+  // Oil & Gas / Energy Industry Publications
+  // ─────────────────────────────────────────────
+  "ogj.com",
+  "oilprice.com",
+  "oilgasjournal.com",
+  "offshore-technology.com",
+  "offshore-mag.com",
+  "worldoil.com",
+  "rigzone.com",
+  "ogjnews.com",
+  "petroleum-economist.com",
+  "energyintel.com",
+  "energyvoice.com",
+  "energyconnects.com",
+  "energyglobal.com",
+  "energy-storage.news",
+  "renewableenergyworld.com",
+  "pv-magazine.com",
+  "pv-tech.org",
+  "solarserver.com",
+  "solarquarter.com",
+  "mercomindia.com",
+
+  // ─────────────────────────────────────────────
+  // Industrial / Automation / Manufacturing Media
+  // ─────────────────────────────────────────────
+  "industryweek.com",
+  "automation.com",
+  "controlglobal.com",
+  "controleng.com",
+  "plantengineering.com",
+  "plantservices.com",
+  "processingmagazine.com",
+  "chemicalprocessing.com",
+  "powermag.com",
+  "power-eng.com",
+  "utilitydive.com",
+  "manufacturing.net",
+  "manufacturingtomorrow.com",
+  "designnews.com",
+  "engineering.com",
+  "electronicsmedia.info",
+
+  // ─────────────────────────────────────────────
+  // Technology / Electronics Publications
+  // ─────────────────────────────────────────────
+  "techcrunch.com",
+  "zdnet.com",
+  "theregister.com",
+  "venturebeat.com",
+  "electronicsweekly.com",
+  "eetimes.com",
+  "electronicdesign.com",
+  "embedded.com",
+
+  // ─────────────────────────────────────────────
+  // Textile / Industry Publications
+  // ─────────────────────────────────────────────
+  "textileworld.com",
+  "indiantextilejournal.com",
+
+  // ─────────────────────────────────────────────
+  // Market Research / Intelligence / Reports
+  // ─────────────────────────────────────────────
+  "market.us",
+  "marketsandmarkets.com",
+  "mordorintelligence.com",
+  "grandviewresearch.com",
+  "fortunebusinessinsights.com",
+  "precedenceresearch.com",
+  "alliedmarketresearch.com",
+  "researchandmarkets.com",
+  "imarcgroup.com",
+  "globaldata.com",
+  "technavio.com",
+  "factsandfactors.com",
+  "databridgemarketresearch.com",
+
+  // ─────────────────────────────────────────────
+  // Directories / Information / Third-party Sources
+  // ─────────────────────────────────────────────
+  "indiafilings.com",
+  "ibef.org",
+  "wikipedia.org",
+  "crunchbase.com",
+  "zoominfo.com",
+  "dnb.com",
+  "apollo.io",
+  "thecompanycheck.com",
+  "tofler.in",
+  "zaubacorp.com",
+  "tracxn.com",
+
+  // ─────────────────────────────────────────────
+  // Publishing Platforms / Blogs
+  // ─────────────────────────────────────────────
+  "medium.com",
+  "wordpress.com",
+  "blogspot.com",
+  "substack.com",
+  "tumblr.com",
+
+  // ─────────────────────────────────────────────
+  // Press Release / PR / Syndication
+  // ─────────────────────────────────────────────
+  "prweb.com",
+  "pr.com",
+  "einpresswire.com",
+  "accesswire.com",
+  "24-7pressrelease.com",
+  "newswire.com",
+
+  // ─────────────────────────────────────────────
+  // Generic Media / News Patterns
+  // ─────────────────────────────────────────────
+  "news.",
+  "media.",
+  "magazine.",
+  "journal.",
+  "press.",
+];
 const ARTICLE_PATHS = [
   "/article/", "/articles/", "/blog/", "/blogs/", "/news/", "/post/",
   "/posts/", "/story/", "/stories/", "/category/", "/tag/", "/author/",
@@ -947,14 +1076,54 @@ function extractEmail(text: string, website: string): string {
 }
 
 function extractPhone(text: string): string {
-  const matches = text.match(/(?:\+\d{1,3}[\s.-]?)?(?:\(?\d{2,5}\)?[\s.-]?)?\d{6,12}/g) ?? [];
+  const source = decodeHtmlEntities(text)
+    .replace(/&nbsp;/gi, " ")
+    .replace(/<br\s*\/?>/gi, " ");
 
-  for (const match of matches) {
-    const trimmed = match.trim();
+  const candidates =
+    source.match(
+      /(?:\+|00)\d{1,3}[\s().-]*(?:\d[\s().-]*){8,14}|\(\d{2,5}\)[\s.-]*\d[\d\s().-]{6,13}|\b\d[\d\s().-]{8,14}\d\b/g
+    ) ?? [];
+
+  for (const candidate of candidates) {
+    const trimmed = candidate.trim();
     const digits = trimmed.replace(/\D/g, "");
-    if (digits.length === 10 && /^[6-9]/.test(digits)) return trimmed;
-    if (digits.length === 12 && digits.startsWith("91") && /^[6-9]/.test(digits.slice(2))) return trimmed;
-    if (/^\+/.test(trimmed) && digits.length >= 10 && digits.length <= 15) return trimmed;
+
+    // Reject numbers that are clearly too short/long.
+    if (digits.length < 9 || digits.length > 15) continue;
+
+    // Avoid dates, years and obvious non-phone numeric strings.
+    if (/^(19|20)\d{2}$/.test(digits)) continue;
+    if (/^0{6,}$/.test(digits)) continue;
+
+    // Prefer international numbers when available.
+    if (
+      (/^\+/.test(trimmed) || /^00/.test(trimmed)) &&
+      digits.length >= 10 &&
+      digits.length <= 15
+    ) {
+      return trimmed;
+    }
+
+    // India mobile / landline fallback.
+    if (
+      digits.length === 10 &&
+      /^[6-9]/.test(digits)
+    ) {
+      return trimmed;
+    }
+
+    if (
+      digits.length === 11 &&
+      /^0[1-9]/.test(digits)
+    ) {
+      return trimmed;
+    }
+
+    // Worldwide national-format phone fallback.
+    if (digits.length >= 9 && digits.length <= 12) {
+      return trimmed;
+    }
   }
 
   return "";
@@ -1097,23 +1266,159 @@ function calculateNegativeScore(text: string): number {
   return countKeywordMatches(text, NEGATIVE_BUSINESS_SIGNALS);
 }
 
-function isLikelyPublisherOrResearchSite(website: string, text: string): boolean {
+function isLikelyPublisherOrResearchSite(
+  website: string,
+  text: string
+): boolean {
+  // Known publisher/research domains are always rejected.
   if (isPublisherDomain(website)) return true;
 
   const lower = text.toLowerCase();
-  const publisherSignals = [
-    "market research", "research report", "industry report", "business research",
-    "news portal", "news magazine", "journal", "editorial", "publisher",
-    "statistics", "market size", "forecast", "research institute",
+
+  // Strong signals that the website itself is a publisher/content platform.
+  const strongPublisherSignals = [
+    "news portal",
+    "news website",
+    "news magazine",
+    "industry news",
+    "industry journal",
+    "trade journal",
+    "online magazine",
+    "digital magazine",
+    "editorial",
+    "publisher",
+    "publishing company",
+    "media company",
+    "media outlet",
+    "press release",
+    "press releases",
+    "latest news",
+    "breaking news",
+    "news and analysis",
+    "industry news and analysis",
+    "articles and news",
+    "journalism",
+    "newsroom",
+    "editorial team",
+    "advertise with us",
+    "write for us",
+    "submit an article",
+    "guest post",
+    "sponsored article",
+    "sponsored content",
   ];
 
-  const matches = publisherSignals.filter((signal) => lower.includes(signal)).length;
-  const hasIndustrialOperations = [
-    "factory", "manufacturing plant", "production plant", "warehouse",
-    "fleet", "power plant", "solar plant", "refinery", "mine",
-  ].some((signal) => lower.includes(signal));
+  // Research / market-intelligence signals.
+  const researchSignals = [
+    "market research",
+    "market research report",
+    "research report",
+    "industry report",
+    "market report",
+    "market analysis",
+    "market intelligence",
+    "industry analysis",
+    "market size",
+    "market forecast",
+    "market forecast report",
+    "industry forecast",
+    "forecast period",
+    "market trends",
+    "research methodology",
+    "research institute",
+    "research organization",
+    "custom research",
+    "syndicated research",
+    "competitive landscape",
+  ];
 
-  return matches >= 2 && !hasIndustrialOperations;
+  // Directory / third-party database signals.
+  const directorySignals = [
+    "business directory",
+    "company directory",
+    "company database",
+    "business listings",
+    "business listing",
+    "find companies",
+    "company profiles",
+    "company profile",
+    "supplier directory",
+    "manufacturer directory",
+    "industry directory",
+    "verified suppliers",
+    "lead database",
+    "lead generation",
+  ];
+
+  // SEO / content / backlink signals.
+  const contentMarketingSignals = [
+    "backlink",
+    "seo services",
+    "guest blogging",
+    "guest posting",
+    "submit your article",
+    "submit an article",
+    "write an article",
+    "content marketing",
+    "sponsored posts",
+    "link building",
+  ];
+
+  const countMatches = (signals: string[]): number =>
+    signals.filter((signal) => lower.includes(signal)).length;
+
+  const strongPublisherMatches =
+    countMatches(strongPublisherSignals);
+
+  const researchMatches =
+    countMatches(researchSignals);
+
+  const directoryMatches =
+    countMatches(directorySignals);
+
+  const contentMarketingMatches =
+    countMatches(contentMarketingSignals);
+
+  /*
+   * A single industry keyword such as "refinery", "solar",
+   * "factory", etc. must NEVER override publisher detection.
+   *
+   * Example:
+   * OGJ article contains "refinery"
+   * but OGJ is still a journal/publisher.
+   */
+
+  if (strongPublisherMatches >= 1) {
+    return true;
+  }
+
+  if (researchMatches >= 2) {
+    return true;
+  }
+
+  if (directoryMatches >= 1) {
+    return true;
+  }
+
+  if (contentMarketingMatches >= 1) {
+    return true;
+  }
+
+  /*
+   * Multiple weaker signals together are enough to identify
+   * a content/research website.
+   */
+  const totalContentSignals =
+    strongPublisherMatches +
+    researchMatches +
+    directoryMatches +
+    contentMarketingMatches;
+
+  if (totalContentSignals >= 2) {
+    return true;
+  }
+
+  return false;
 }
 
 function hasNonCustomerOrganizationType(text: string): boolean {
@@ -1164,6 +1469,14 @@ function hasStrongPhysicalOperations(text: string): boolean {
     "manufacturing facility", "industrial facility", "processing plant",
   ];
   return signals.filter((signal) => lower.includes(signal)).length >= 1;
+}
+
+function isPotentialCustomerText(text: string): boolean {
+  const value = text.toLowerCase();
+
+  return Object.values(CUSTOMER_SEGMENTS)
+    .flat()
+    .some((signal) => value.includes(signal));
 }
 
 function isPotentialUCTCustomer(text: string): boolean {
@@ -1458,27 +1771,133 @@ function getCompanyPages(website: string): string[] {
   ];
 }
 
-async function verifyOfficialWebsite(candidateName: string, website: string, prompt: string): Promise<boolean> {
-  if (!isPotentialOfficialWebsite(website) || !looksLikeCompanyName(candidateName)) return false;
+async function verifyOfficialWebsite(
+  candidateName: string,
+  website: string,
+  prompt: string
+): Promise<boolean> {
+  if (
+    !isPotentialOfficialWebsite(website) ||
+    !looksLikeCompanyName(candidateName)
+  ) {
+    return false;
+  }
 
   try {
     const extracted = await tavilyExtract(
       getCompanyPages(website).slice(0, 5),
-      `Verify that this is the company's official primary website for "${candidateName}". The URL itself must belong to the company's primary domain, not a blog, news, press, media, career/job, article, directory, publisher, backlink, SEO, social-media or third-party content subdomain. Identify the actual company/brand name, what the company does, its industry, physical operations, location and contact details. Ignore articles, third-party companies, advertisements and unrelated page titles.`
+      `Verify whether this URL is the PRIMARY OFFICIAL WEBSITE of the actual company "${candidateName}".
+
+CRITICAL WEBSITE AUTHENTICITY RULE:
+
+The website itself must belong to the actual operating company being researched.
+
+First classify the website.
+
+REJECT COMPLETELY if the website is primarily:
+- a news website
+- industry news
+- a magazine
+- an industry journal
+- a media outlet
+- a publisher
+- a blog
+- an article/content website
+- an editorial website
+- a press-release website
+- an information portal
+- an industry information portal
+- a market research or market intelligence website
+- a research/report publisher
+- a business directory
+- a company directory
+- a business listing website
+- a lead-generation website
+- a company database
+- a backlink or SEO website
+- a job portal
+- a career portal
+- a social-media website
+- a third-party company profile
+- any other third-party content website
+
+IMPORTANT:
+
+A website that publishes information ABOUT an industry is NOT itself an operating company in that industry.
+
+For example:
+- An oil & gas journal publishing an article about a refinery → REJECT the journal.
+- An energy news website publishing information about a solar company → REJECT the news website.
+- An industry magazine publishing information about a factory → REJECT the magazine.
+- A directory listing an oil refinery → REJECT the directory.
+- An article mentioning a refinery company → REJECT the article website.
+
+NEVER extract the company mentioned inside an article and treat the publisher as the company.
+
+The website owner itself must be the actual company being researched.
+
+Do not qualify a website merely because it contains keywords such as:
+oil, petroleum, refinery, solar, energy, manufacturing, factory, IoT, industrial, automation, or technology.
+
+Keywords alone are NOT evidence that the website owner operates in that industry.
+
+Verify:
+1. The actual company/brand name.
+2. What the company itself does.
+3. Its actual industry/business activity.
+4. Its physical operations, facilities, plants, assets or projects where applicable.
+5. Its business location.
+6. Its business contact information.
+7. Whether the supplied domain is genuinely the company's primary official domain.
+
+For the requested research topic, verify that the COMPANY ITSELF is relevant.
+
+For oil refinery research:
+The company itself must own, operate, develop or have a clearly verified petroleum/oil refining operation.
+
+For solar energy research:
+The company itself must own, operate, develop, install, maintain or manage a clearly verified solar energy operation or solar infrastructure.
+
+Do not qualify a company merely because it:
+- mentions the industry,
+- publishes information about the industry,
+- has an industry-related customer,
+- sells unrelated products,
+- appears in an industry article,
+- or is mentioned by another company.
+
+If the website is a publisher, news organization, magazine, journal, blog, directory, media outlet or third-party information source, RETURN NULL.
+
+If the company identity or website authenticity is uncertain, RETURN NULL.
+
+NEVER convert uncertainty into a lead.
+
+Return information only when the supplied URL is the actual primary official website of the relevant company.`
     );
 
     const text = Array.isArray(extracted?.results)
-      ? extracted.results.map((item: any) => item?.raw_content || "").join("\n")
+      ? extracted.results
+          .map((item: any) => item?.raw_content || "")
+          .join("\n")
       : "";
 
     if (!text.trim()) return false;
-    if (!websiteIdentityMatches(candidateName, website, text)) return false;
-    if (!locationMatchesPrompt(text, prompt)) return false;
+
+    if (!websiteIdentityMatches(candidateName, website, text)) {
+      return false;
+    }
+
+    if (!locationMatchesPrompt(text, prompt)) {
+      return false;
+    }
+
     return isPotentialUCTCustomer(text);
   } catch {
     return false;
   }
 }
+
+
 
 async function findOfficialWebsite(
   candidateName: string,
@@ -1487,6 +1906,7 @@ async function findOfficialWebsite(
   excludedWebsites?: Set<string>
 ): Promise<string> {
   if (!looksLikeCompanyName(candidateName)) return "";
+
   const requestedLocation = extractRequestedLocation(prompt);
   const queries = [
     `"${candidateName}" official website`,
@@ -1494,28 +1914,71 @@ async function findOfficialWebsite(
     `"${candidateName}" contact`,
   ];
 
-  if (requestedLocation) queries.unshift(`"${candidateName}" ${requestedLocation} official website`);
+  if (requestedLocation) {
+    queries.unshift(
+      `"${candidateName}" ${requestedLocation} official website`
+    );
+  }
 
   for (const query of queries) {
     try {
-      const data = await tavilySearch(query, 5);
+      const data = await tavilySearch(query, 5, {
+        excludeDomains: buildDynamicSearchExclusions(
+          knownLeadKeys,
+          excludedWebsites
+        ),
+      });
+
       const results = Array.isArray(data?.results) ? data.results : [];
+
       const candidates = results
-        .filter((result: any) => result?.url && isPotentialOfficialWebsite(result.url))
-        .map((result: any) => ({
-          url: getOrigin(result.url),
-          title: String(result.title || ""),
-          content: String(result.content || ""),
-        }))
-        .filter((candidate: any) => candidate.url)
+        .filter((result: any) => result?.url)
+        .map((result: any) => {
+          const rawUrl = String(result.url);
+          const title = String(result.title || "");
+          const content = String(result.content || "");
+          const combined = `${title} ${content}`;
+
+          return {
+            url: getOrigin(rawUrl),
+            title,
+            content,
+            combined,
+            score: Number(result.score || 0),
+          };
+        })
+        .filter(
+          (candidate: any) =>
+            candidate.url &&
+            isPotentialOfficialWebsite(candidate.url) &&
+            !isLikelyPublisherOrResearchSite(
+              candidate.url,
+              candidate.combined
+            )
+        )
         .map((candidate: any) => {
-          const combined = `${candidate.title} ${candidate.content}`.toLowerCase();
           const tokens = getNameTokens(candidateName);
-          let score = 0;
+          let score = candidate.score;
+
           for (const token of tokens) {
-            if (combined.includes(token)) score += 2;
-            if (getHostname(candidate.url).includes(token)) score += 5;
+            if (candidate.combined.toLowerCase().includes(token)) {
+              score += 2;
+            }
+
+            if (getHostname(candidate.url).includes(token)) {
+              score += 5;
+            }
           }
+
+          if (
+            requestedLocation &&
+            candidate.combined
+              .toLowerCase()
+              .includes(requestedLocation.toLowerCase())
+          ) {
+            score += 1.5;
+          }
+
           return { ...candidate, score };
         })
         .sort((a: any, b: any) => b.score - a.score);
@@ -1523,12 +1986,7 @@ async function findOfficialWebsite(
       for (const candidate of candidates.slice(0, 3)) {
         const candidateDomain = normalizeDomainKey(candidate.url);
 
-        if (
-          isExcludedWebsite(
-            candidate.url,
-            excludedWebsites
-          )
-        ) {
+        if (isExcludedWebsite(candidate.url, excludedWebsites)) {
           continue;
         }
 
@@ -1550,7 +2008,10 @@ async function findOfficialWebsite(
         }
       }
     } catch (error) {
-      console.error(`Official website search failed for ${candidateName}:`, error);
+      console.error(
+        `Official website search failed for ${candidateName}:`,
+        error
+      );
     }
   }
 
@@ -1664,15 +2125,25 @@ async function fetchPageHtml(url: string): Promise<string> {
 }
 
 async function fetchOfficialContactHtml(website: string): Promise<string> {
-  const pages = getCompanyPages(website).slice(0, 5);
+  const origin = getOrigin(website);
+  if (!origin) return "";
 
-  // Contact pages are the highest-value source for missing email addresses.
-  const prioritized = [
-    ...pages.filter((page) => /\/contact(?:-us)?$/i.test(page)),
-    ...pages.filter((page) => !/\/contact(?:-us)?$/i.test(page)),
+  const pages = [
+    ...getCompanyPages(website),
+    `${origin}/contact`,
+    `${origin}/contact-us`,
+    `${origin}/contactus`,
+    `${origin}/about`,
+    `${origin}/about-us`,
+    `${origin}/company`,
+    `${origin}/support`,
+    `${origin}/sales`,
+    `${origin}/locations`,
+    `${origin}/branches`,
+    `${origin}/offices`,
   ];
 
-  const uniquePages = [...new Set(prioritized)].slice(0, 5);
+  const uniquePages = [...new Set(pages)].slice(0, 12);
 
   const htmlResults = await Promise.all(
     uniquePages.map((page) => fetchPageHtml(page))
@@ -1692,18 +2163,96 @@ async function extractVerifiedCompany(
   try {
     const data = await tavilyExtract(
       getCompanyPages(website),
-      "Extract factual information only from the company's own official primary website. Never treat a blog, news site, article page, press/media site, career/job site, directory, publisher, backlink/SEO site, social page, or third-party company profile as the official company website. Identify the actual legal or brand company name, what the business does, industry, manufacturing plants, factories, warehouses, fleets, physical assets, industrial operations, equipment, machinery and relevant use cases. Also extract business address/location, plant location, phone number and business email. Ignore third-party companies, article titles, publishers, directories, advertisements and generic page headings."
+      `
+EXTRACT ONLY VERIFIED FACTS FROM THE ACTUAL COMPANY'S PRIMARY OFFICIAL WEBSITE.
+
+CRITICAL WEBSITE AUTHENTICITY RULE:
+The supplied URL must belong to the actual operating company.
+
+REJECT COMPLETELY if it is:
+- news, media, magazine or industry journal
+- publisher or editorial website
+- blog or article/content website
+- press-release or information portal
+- market research/intelligence website
+- research/report publisher
+- business/company directory
+- lead-generation or company database
+- backlink/SEO website
+- job/career portal
+- social-media website
+- third-party company profile
+
+A website publishing information ABOUT an oil refinery, solar plant, factory or another company is NOT that company.
+
+NEVER turn an article title, customer name, partner name, author name or publisher name into the company identity.
+
+The website owner itself must be the relevant business.
+
+INDUSTRY AUTHENTICITY:
+Do not qualify a company only because keywords such as oil, refinery, solar, energy, manufacturing, factory, industrial, IoT or automation appear.
+
+For oil/refinery research, verify that the company itself owns, operates, develops or manages an actual petroleum/oil refining operation.
+
+For solar research, verify that the company itself owns, operates, develops, installs, maintains or manages genuine solar energy infrastructure or solar power operations.
+
+If the company identity or business activity is uncertain, return no company data.
+
+CONTACT REQUIREMENT — BOTH ARE MANDATORY:
+You MUST actively search the official website's contact, about, locations, office, support and footer information for BOTH:
+1. a real business email address
+2. a real business phone number
+
+Do not stop after finding only one.
+
+Use only contact details belonging to the company that owns this official domain.
+
+Do NOT use:
+- journalist/author emails
+- article author contact details
+- partner/customer contacts
+- directory contacts
+- third-party contacts
+- unrelated phone numbers
+
+If an email is missing from the homepage, check official contact/about/location pages.
+If a phone number is missing from the homepage, check official contact/about/location/footer pages.
+If either email OR phone cannot be verified from the company's own official website, return no company data.
+
+EXTRACT:
+- actual company/brand name
+- actual business activity
+- industry
+- physical plants/factories/refineries/solar facilities/warehouses/fleets where applicable
+- business address/location
+- business phone number
+- business email address
+
+NEVER convert uncertainty into a lead.
+      `
     );
 
     const results = Array.isArray(data?.results) ? data.results : [];
-    const websiteText = results.map((result: any) => result?.raw_content || "").filter(Boolean).join("\n");
+    const websiteText = results
+      .map((result: any) => result?.raw_content || "")
+      .filter(Boolean)
+      .join("\n");
+
     if (!websiteText.trim()) {
-      emitLeadRejected(onEvent, website, "official website returned no usable content");
+      emitLeadRejected(
+        onEvent,
+        website,
+        "official website returned no usable content"
+      );
       return null;
     }
 
     if (isLikelyPublisherOrResearchSite(website, websiteText)) {
-      emitLeadRejected(onEvent, website, "publisher/research/information site");
+      emitLeadRejected(
+        onEvent,
+        website,
+        "publisher/research/information site"
+      );
       return null;
     }
 
@@ -1717,42 +2266,102 @@ async function extractVerifiedCompany(
     }
 
     if (!locationMatchesPrompt(websiteText, prompt)) {
-      emitLeadRejected(onEvent, website, "location does not match requested location");
+      emitLeadRejected(
+        onEvent,
+        website,
+        "location does not match requested location"
+      );
       return null;
     }
 
-    // Company identity is used internally for verification only.
-    // It is deliberately NOT returned to the research result.
     if (
       expectedName &&
-      !websiteIdentityMatches(expectedName, website, websiteText)
+      !websiteIdentityMatches(
+        expectedName,
+        website,
+        websiteText
+      )
     ) {
-      emitLeadRejected(onEvent, website, "official company identity could not be verified");
+      emitLeadRejected(
+        onEvent,
+        website,
+        "official company identity could not be verified"
+      );
       return null;
     }
 
+    // First pass: Tavily extracted official pages.
     let email = extractEmail(websiteText, website);
+    let phone = extractPhone(websiteText);
 
-    // Tavily returns cleaned text and can remove href/javascript attributes.
-    // If no email was found, fetch the official contact/about HTML directly so
-    // obfuscated emails such as "info (at) company.com" and
-    // linkTo_UnCryptMailto(...) can still be recovered.
-    if (!email) {
+    // Second pass: fetch official HTML because Tavily can remove
+    // mailto/javascript attributes and formatted phone numbers.
+    if (!email || !phone) {
       const contactHtml = await fetchOfficialContactHtml(website);
+
       if (contactHtml) {
-        email = extractEmail(contactHtml, website);
+        if (!email) {
+          email = extractEmail(contactHtml, website);
+        }
+
+        if (!phone) {
+          phone = extractPhone(contactHtml);
+        }
       }
     }
 
-    const phone = extractPhone(websiteText);
-    const location = extractLocation(websiteText);
+    // Third pass: explicitly extract the official contact pages again
+    // through Tavily when one of the two mandatory contacts is still missing.
+    if (!email || !phone) {
+      const contactPages = [
+        ...getCompanyPages(website),
+        `${getOrigin(website)}/contact`,
+        `${getOrigin(website)}/contact-us`,
+        `${getOrigin(website)}/about`,
+        `${getOrigin(website)}/locations`,
+      ];
 
-    if (location && !isPlausibleBusinessLocation(location)) {
-      emitLeadRejected(onEvent, website, "invalid business location");
-      return null;
+      const contactData = await tavilyExtract(
+        [...new Set(contactPages)].slice(0, 12),
+        `Find ONLY the official company's own contact information.
+
+Return factual contact information belonging to the company that owns this website.
+
+Find BOTH:
+- business email address
+- business phone number
+
+Search the homepage, contact page, about page, office/location page and footer.
+
+Do not use author, journalist, partner, customer, directory or third-party contact details.
+
+If either contact cannot be verified from this official domain, do not invent it.`
+      );
+
+      const contactResults = Array.isArray(contactData?.results)
+        ? contactData.results
+        : [];
+
+      const contactText = contactResults
+        .map((result: any) => result?.raw_content || "")
+        .filter(Boolean)
+        .join("\n");
+
+      if (contactText) {
+        if (!email) {
+          email = extractEmail(contactText, website);
+        }
+
+        if (!phone) {
+          phone = extractPhone(contactText);
+        }
+      }
     }
 
-   if (!website || (!email && !phone)) {
+    const location = extractLocation(websiteText);
+    // Website + Email OR Website + Phone = valid lead.
+// Website without either contact method = reject.
+if (!website || (!email && !phone)) {
   emitLeadRejected(
     onEvent,
     website,
@@ -1761,8 +2370,41 @@ async function extractVerifiedCompany(
   return null;
 }
 
-    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      emitLeadRejected(onEvent, website, "invalid business email");
+    if (location && !isPlausibleBusinessLocation(location)) {
+      emitLeadRejected(
+        onEvent,
+        website,
+        "invalid business location"
+      );
+      return null;
+    }
+
+    // Website + Email OR Website + Phone = valid lead.
+    // We actively search for both, but only one verified contact is required.
+    if (!website || (!email && !phone)) {
+      emitLeadRejected(
+        onEvent,
+        website,
+        "website required and either business email or phone must be found"
+      );
+      return null;
+    }
+
+    if (email && !isValidBusinessEmail(email, website)) {
+      emitLeadRejected(
+        onEvent,
+        website,
+        "invalid business email"
+      );
+      return null;
+    }
+
+    if (phone && phone.replace(/\D/g, "").length < 9) {
+      emitLeadRejected(
+        onEvent,
+        website,
+        "invalid business phone"
+      );
       return null;
     }
 
@@ -1775,10 +2417,79 @@ async function extractVerifiedCompany(
       googleBusinessProfile: "",
     };
   } catch (error) {
-    console.error(`Verified company extraction failed for ${website}:`, error);
+    console.error(
+      `Verified company extraction failed for ${website}:`,
+      error
+    );
     return null;
   }
 }
+function leadCompleteness(lead: SectorLead): number {
+  let score = 0;
+
+  if (lead.website) score += 4;
+  if (lead.email) score += 3;
+  if (lead.phone) score += 2;
+  if (lead.sector) score += 1;
+
+  return score;
+}
+
+function deduplicateLeads(leads: SectorLead[]): SectorLead[] {
+  const byWebsite = new Map<string, SectorLead>();
+
+  for (const lead of leads) {
+    const key = normalizeDomainKey(lead.website);
+    if (!key) continue;
+
+    const existing = byWebsite.get(key);
+    if (!existing || leadCompleteness(lead) > leadCompleteness(existing)) {
+      byWebsite.set(key, lead);
+    }
+  }
+
+  return [...byWebsite.values()];
+}
+
+/* =========================================================
+   17. FINAL QUALITY GATE
+========================================================= */
+
+function finalQualityGate(lead: SectorLead): boolean {
+  if (
+    !lead.sector ||
+    !lead.website ||
+    !isPotentialOfficialWebsite(lead.website)
+  ) {
+    return false;
+  }
+
+  // At least one verified business contact is required.
+  if (!lead.email && !lead.phone) {
+    return false;
+  }
+
+  if (lead.location && !isPlausibleBusinessLocation(lead.location)) {
+    return false;
+  }
+
+  if (lead.email && !isValidBusinessEmail(lead.email, lead.website)) {
+    return false;
+  }
+
+  if (lead.phone) {
+    const phoneDigits = lead.phone.replace(/\D/g, "");
+    if (phoneDigits.length < 9 || phoneDigits.length > 15) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+/* =========================================================
+   14. DIRECT DISCOVERY
+========================================================= */
 
 /* =========================================================
    12. SEARCH QUERY GENERATION
@@ -1883,57 +2594,40 @@ function buildSearchQueries(prompt: string): string[] {
 }
 
 /* =========================================================
-   13. CANDIDATE NAME EXTRACTION FROM DISCOVERY SOURCES
-========================================================= */
-
-function extractCompanyCandidates(text: string): string[] {
-  const lines = text.split("\n").map(cleanText).filter(Boolean);
-  const candidates: string[] = [];
-
-  const strongPatterns = [
-    /\bprivate limited\b/i, /\bpvt\.?\s*ltd\.?\b/i, /\blimited\b/i, /\bllp\b/i,
-    /\binc\.?\b/i, /\bcorporation\b/i, /\bcorp\.?\b/i, /\bllc\b/i,
-  ];
-
-  for (const line of lines) {
-    if (line.length < 4 || line.length > 110) continue;
-    if (!looksLikeCompanyName(line)) continue;
-    if (ARTICLE_TITLE_WORDS.some((word) => line.toLowerCase().includes(word))) continue;
-    if (strongPatterns.some((pattern) => pattern.test(line))) candidates.push(line);
-  }
-
-  return [...new Set(candidates)].slice(0, MAX_DIRECTORY_CANDIDATES);
-}
-
-function isPotentialCustomerText(text: string): boolean {
-  const value = text.toLowerCase();
-
-  return Object.values(CUSTOMER_SEGMENTS)
-    .flat()
-    .some((signal) => value.includes(signal));
-}
-
-
-/* =========================================================
    14. DIRECT DISCOVERY
 ========================================================= */
 
-async function directDiscovery(prompt: string, options: ResearchRunOptions = {}): Promise<SectorLead[]> {
-  const limit = Math.max(1, Math.floor(options.limit ?? Number.MAX_SAFE_INTEGER));
+async function directDiscovery(
+  prompt: string,
+  options: ResearchRunOptions = {}
+): Promise<SectorLead[]> {
+  const limit = Math.max(
+    1,
+    Math.floor(options.limit ?? Number.MAX_SAFE_INTEGER)
+  );
+
   const leads: SectorLead[] = [];
   const queries = buildSearchQueries(prompt);
-  const knownLeadKeys = options.knownLeadKeys ?? createLeadKeySets([]);
-  const counter = options.newLeadCount ?? { value: 0 };
-  const excludedWebsites = options.excludedWebsites;
+  const knownLeadKeys =
+    options.knownLeadKeys ?? createLeadKeySets([]);
+  const counter =
+    options.newLeadCount ?? { value: 0 };
+
+  const excludedWebsites =
+    options.excludedWebsites;
+
   const seenWebsites =
     options.runSeenWebsites ??
     new Set<string>();
 
   options.runSeenWebsites = seenWebsites;
 
-  const requestedLocation = extractRequestedLocation(prompt).toLowerCase();
+  const requestedLocation =
+    extractRequestedLocation(prompt).toLowerCase();
+
   const isIndiaRequest =
-    requestedLocation === "india" || /\bindia\b/i.test(prompt);
+    requestedLocation === "india" ||
+    /\bindia\b/i.test(prompt);
 
   for (const query of queries) {
     if (counter.value >= limit) break;
@@ -1945,29 +2639,32 @@ async function directDiscovery(prompt: string, options: ResearchRunOptions = {})
     );
 
     try {
-      const data = await tavilySearch(query, MAX_SEARCH_RESULTS, {
-        excludeDomains: buildDynamicSearchExclusions(
-          knownLeadKeys,
-          excludedWebsites
-        ),
-      });
+      const data = await tavilySearch(
+        query,
+        MAX_SEARCH_RESULTS,
+        {
+          excludeDomains:
+            buildDynamicSearchExclusions(
+              knownLeadKeys,
+              excludedWebsites
+            ),
+        }
+      );
 
-      const results = Array.isArray(data?.results) ? data.results : [];
+      const results = Array.isArray(data?.results)
+        ? data.results
+        : [];
 
-      /*
-       * Rank candidate URLs before verification. This prevents generic
-       * publishers, global directories and unrelated companies from consuming
-       * the expensive website-extraction step.
-       */
       const ranked = results
         .map((result: any) => {
           const url = String(result?.url || "");
           const title = String(result?.title || "");
           const content = String(result?.content || "");
-          const score = Number(result?.score || 0);
-          const combined = `${title} ${content} ${url}`.toLowerCase();
+          const baseScore = Number(result?.score || 0);
+          const combined =
+            `${title} ${content} ${url}`.toLowerCase();
 
-          let relevance = score;
+          let relevance = baseScore;
 
           if (
             isIndiaRequest &&
@@ -1978,138 +2675,200 @@ async function directDiscovery(prompt: string, options: ResearchRunOptions = {})
 
           if (
             isIndiaRequest &&
-            /\b(india|indian|maharashtra|gujarat|tamil nadu|karnataka|telangana|haryana|uttar pradesh|delhi|noida|gurugram|pune|ahmedabad|chennai|bengaluru|hyderabad)\b/i.test(combined)
+            /\b(india|indian|maharashtra|gujarat|tamil nadu|karnataka|telangana|haryana|uttar pradesh|delhi|noida|gurugram|pune|ahmedabad|chennai|bengaluru|hyderabad)\b/i.test(
+              combined
+            )
           ) {
             relevance += 0.20;
           }
 
-          if (isPotentialCustomerText(combined)) relevance += 0.15;
-          if (isDirectoryDomain(url) || isPublisherDomain(url) || isSocialDomain(url)) {
+          if (isPotentialCustomerText(combined)) {
+            relevance += 0.15;
+          }
+
+          if (
+            isDirectoryDomain(url) ||
+            isPublisherDomain(url) ||
+            isSocialDomain(url)
+          ) {
             relevance -= 1;
           }
 
           return { url, relevance };
         })
-        .filter((item: any) => item.url && isPotentialOfficialWebsite(item.url))
-        .filter((item: any) => item.relevance >= 0.45)
-        .sort((a: any, b: any) => b.relevance - a.relevance);
-
+        .filter(
+          (item: any) =>
+            item.url &&
+            isPotentialOfficialWebsite(item.url)
+        )
+        .filter(
+          (item: any) =>
+            item.relevance >= 0.45
+        )
+        .sort(
+          (a: any, b: any) =>
+            b.relevance - a.relevance
+        );
 const websites: string[] = Array.from(
   new Set<string>(
     ranked
-      .map((item: any): string => getOrigin(String(item.url || "")))
-      .filter((url: string): url is string => Boolean(url))
+      .map((item: any) =>
+        getOrigin(String(item.url || ""))
+      )
+      .filter(
+  (url: unknown): url is string => typeof url === "string" && Boolean(url)
+)
   )
 ).slice(0, MAX_WEBSITES_PER_QUERY);
 
 
-for (const website of websites) {
-  if (counter.value >= limit) break;
+      for (const website of websites) {
+        if (counter.value >= limit) break;
 
-  const normalizedWebsite = normalizeDomainKey(website);
+        const normalizedWebsite =
+          normalizeDomainKey(website);
 
-  if (!normalizedWebsite) {
-    continue;
-  }
+        if (!normalizedWebsite) continue;
 
-  if (isExcludedWebsite(website, excludedWebsites)) {
-    emitDuplicateNotice(
-      options.onEvent,
-      `Browser cache already contains: ${website}`,
-      website
-    );
-    emitResearchEvent(
-      options.onEvent,
-      "skipped",
-      `Browser cache skipped before verification: ${website}`
-    );
-    continue;
-  }
+        if (
+          isExcludedWebsite(
+            website,
+            excludedWebsites
+          )
+        ) {
+          emitDuplicateNotice(
+            options.onEvent,
+            `Browser/DB cache already contains: ${website}`,
+            website
+          );
 
-  // PostgreSQL is the second permanent duplicate barrier.
-  if (knownLeadKeys.websites.has(normalizedWebsite)) {
-    emitDuplicateNotice(
-      options.onEvent,
-      `Lead already exists: ${website}`,
-      website
-    );
-    emitResearchEvent(
-      options.onEvent,
-      "skipped",
-      `Duplicate lead skipped before verification: ${website}`
-    );
+          emitResearchEvent(
+            options.onEvent,
+            "skipped",
+            `Browser cache skipped before verification: ${website}`,
+            website
+          );
 
-    // Remember DB duplicates in the browser cache as well, so the same
-    // domain does not need to pass through this check again next time.
-    await markWebsiteResearched(website, options);
-    continue;
-  }
+          continue;
+        }
 
-  // Third barrier: this research run itself.
-  if (!(await markWebsiteResearched(website, options))) {
-    emitDuplicateNotice(
-      options.onEvent,
-      `Already encountered in this research run: ${website}`,
-      website
-    );
-    emitResearchEvent(
-      options.onEvent,
-      "skipped",
-      `Already encountered in this research run: ${website}`
-    );
-    continue;
-  }
+        if (
+          knownLeadKeys.websites.has(
+            normalizedWebsite
+          )
+        ) {
+          emitDuplicateNotice(
+            options.onEvent,
+            `Lead already exists: ${website}`,
+            website
+          );
 
-  emitResearchEvent(
-    options.onEvent,
-    "check",
-    `Verifying official website: ${website}`
-  );
+          emitResearchEvent(
+            options.onEvent,
+            "skipped",
+            `Duplicate lead skipped before verification: ${website}`,
+            website
+          );
 
-  const lead = await extractVerifiedCompany(website, prompt, undefined, options.onEvent);
+          await markWebsiteResearched(
+            website,
+            options
+          );
 
-  if (!lead) {
-    continue;
-  }
+          continue;
+        }
 
-  if (isKnownLead(lead, knownLeadKeys)) {
-    emitDuplicateNotice(
-      options.onEvent,
-      `Lead already exists: ${website}`,
-      website
-    );
-    emitResearchEvent(
-      options.onEvent,
-      "skipped",
-      `Duplicate lead skipped: ${website}`
-    );
-    continue;
-  }
+        if (
+          !(await markWebsiteResearched(
+            website,
+            options
+          ))
+        ) {
+          emitDuplicateNotice(
+            options.onEvent,
+            `Already encountered in this research run: ${website}`,
+            website
+          );
 
-  const savedImmediately = await saveVerifiedLeadImmediately(
-    lead,
-    options.onEvent,
-    website
-  );
+          emitResearchEvent(
+            options.onEvent,
+            "skipped",
+            `Already encountered in this research run: ${website}`,
+            website
+          );
 
-  if (!savedImmediately) {
-    continue;
-  }
+          continue;
+        }
 
-  leads.push(lead);
-  registerLeadKeys(lead, knownLeadKeys);
-  counter.value += 1;
+        emitResearchEvent(
+          options.onEvent,
+          "check",
+          `Verifying official website: ${website}`,
+          website
+        );
 
-  emitResearchEvent(
-    options.onEvent,
-    "success",
-    `Found ${counter.value} new lead${counter.value === 1 ? "" : "s"}: ${website}`
-  );
-}
-      
+        const lead =
+          await extractVerifiedCompany(
+            website,
+            prompt,
+            undefined,
+            options.onEvent
+          );
 
+        if (!lead) continue;
+
+        if (
+          isKnownLead(
+            lead,
+            knownLeadKeys
+          )
+        ) {
+          emitDuplicateNotice(
+            options.onEvent,
+            `Lead already exists: ${website}`,
+            website
+          );
+
+          emitResearchEvent(
+            options.onEvent,
+            "skipped",
+            `Duplicate lead skipped: ${website}`,
+            website
+          );
+
+          continue;
+        }
+
+        const savedImmediately =
+          await saveVerifiedLeadImmediately(
+            lead,
+            options.onEvent,
+            website
+          );
+
+        if (!savedImmediately) continue;
+
+        leads.push(lead);
+        registerLeadKeys(
+          lead,
+          knownLeadKeys
+        );
+
+        counter.value += 1;
+
+        emitResearchEvent(
+          options.onEvent,
+          "success",
+          `Found ${counter.value} new lead${counter.value === 1 ? "" : "s"}: ${website}`,
+          website
+        );
+      }
     } catch (error) {
-      console.error(`Direct discovery failed for "${query}":`, error);
+      console.error(
+        `Direct discovery failed for "${query}":`,
+        error
+      );
+
       emitResearchEvent(
         options.onEvent,
         "error",
@@ -2119,254 +2878,6 @@ for (const website of websites) {
   }
 
   return leads;
-}
-
-/* =========================================================
-   15. DIRECTORY-ASSISTED DISCOVERY
-========================================================= */
-
-async function directoryDiscovery(prompt: string, options: ResearchRunOptions = {}): Promise<SectorLead[]> {
-  const leads: SectorLead[] = [];
-  const limit = Math.max(1, Math.floor(options.limit ?? Number.MAX_SAFE_INTEGER));
-  const knownLeadKeys = options.knownLeadKeys ?? createLeadKeySets([]);
-  const counter = options.newLeadCount ?? { value: 0 };
-  const excludedWebsites = options.excludedWebsites;
-  const runSeenWebsites =
-    options.runSeenWebsites ??
-    new Set<string>();
-
-  options.runSeenWebsites = runSeenWebsites;
-
-  try {
-    const data = await tavilySearch(
-      `${prompt} companies manufacturers`,
-      10,
-      {
-        excludeDomains: buildDynamicSearchExclusions(
-          knownLeadKeys,
-          excludedWebsites
-        ),
-      }
-    );
-    const results = Array.isArray(data?.results) ? data.results : [];
-    const directoryResults = results.filter(
-      (result: any) => result?.url && isDirectoryDomain(result.url)
-    );
-
-    for (const source of directoryResults.slice(0, MAX_DIRECTORY_SOURCES)) {
-      if (counter.value >= limit) break;
-
-      emitResearchEvent(
-        options.onEvent,
-        "search",
-        `Checking directory source: ${source.url}`
-      );
-
-      try {
-        const extracted = await tavilyExtract(
-          [source.url],
-          "Extract only names of real industrial businesses or end-user companies mentioned on this page. Ignore article titles, categories, directories, databases, service agencies, consultants, technology providers and generic phrases."
-        );
-
-        const text = extracted?.results?.[0]?.raw_content || "";
-        if (!text.trim()) continue;
-
-        const candidates = extractCompanyCandidates(text);
-
-        for (const companyName of candidates) {
-          if (counter.value >= limit) break;
-
-          // Candidate names can repeat across discovery sources. We cannot
-          // know the final domain yet, so identity verification remains
-          // necessary here; the official domain is checked before extraction
-          // as soon as it is discovered below.
-          emitResearchEvent(
-            options.onEvent,
-            "check",
-            `Finding official website: ${companyName}`
-          );
-
-          const officialWebsite = await findOfficialWebsite(
-            companyName,
-            prompt,
-            knownLeadKeys,
-            excludedWebsites
-          );
-
-          if (!officialWebsite) {
-            emitResearchEvent(
-              options.onEvent,
-              "rejected",
-              `Official website not verified: ${companyName}`
-            );
-            continue;
-          }
-
-          const normalizedOfficialDomain = normalizeDomainKey(officialWebsite);
-
-          if (isExcludedWebsite(officialWebsite, excludedWebsites)) {
-            emitDuplicateNotice(
-              options.onEvent,
-              `Browser cache already contains: ${officialWebsite}`,
-              officialWebsite
-            );
-            emitResearchEvent(
-              options.onEvent,
-              "skipped",
-              `Browser cache skipped before verification: ${officialWebsite}`
-            );
-            continue;
-          }
-
-          if (knownLeadKeys.websites.has(normalizedOfficialDomain)) {
-            emitDuplicateNotice(
-              options.onEvent,
-              `Lead already exists: ${officialWebsite}`,
-              officialWebsite
-            );
-            emitResearchEvent(
-              options.onEvent,
-              "skipped",
-              `Duplicate lead skipped before verification: ${officialWebsite}`
-            );
-
-            await markWebsiteResearched(
-              officialWebsite,
-              options
-            );
-            continue;
-          }
-
-          if (!(await markWebsiteResearched(officialWebsite, options))) {
-            emitDuplicateNotice(
-              options.onEvent,
-              `Already encountered in this research run: ${officialWebsite}`,
-              officialWebsite
-            );
-            emitResearchEvent(
-              options.onEvent,
-              "skipped",
-              `Already encountered in this research run: ${officialWebsite}`
-            );
-            continue;
-          }
-
-          emitResearchEvent(
-            options.onEvent,
-            "check",
-            `Verifying official website: ${officialWebsite}`
-          );
-
-          const lead = await extractVerifiedCompany(
-            officialWebsite,
-            prompt,
-            companyName,
-            options.onEvent
-          );
-
-          if (!lead) {
-            emitResearchEvent(
-              options.onEvent,
-              "rejected",
-              `Lead rejected: ${officialWebsite}`
-            );
-            continue;
-          }
-
-          if (isKnownLead(lead, knownLeadKeys)) {
-            emitDuplicateNotice(
-              options.onEvent,
-              `Lead already exists: ${officialWebsite}`,
-              officialWebsite
-            );
-            emitResearchEvent(
-              options.onEvent,
-              "skipped",
-              `Duplicate lead skipped: ${officialWebsite}`
-            );
-            continue;
-          }
-
-          const savedImmediately = await saveVerifiedLeadImmediately(
-            lead,
-            options.onEvent,
-            officialWebsite
-          );
-
-          if (!savedImmediately) {
-            continue;
-          }
-
-          leads.push(lead);
-          registerLeadKeys(lead, knownLeadKeys);
-          counter.value += 1;
-
-          emitResearchEvent(
-            options.onEvent,
-            "success",
-            `Found ${counter.value} new lead${counter.value === 1 ? "" : "s"}: ${officialWebsite}`
-          );
-        }
-      } catch (error) {
-        console.error(`Directory processing failed for ${source.url}:`, error);
-        emitResearchEvent(
-          options.onEvent,
-          "error",
-          `Directory processing failed: ${source.url}`
-        );
-      }
-    }
-  } catch (error) {
-    console.error("Directory discovery failed:", error);
-    emitResearchEvent(
-      options.onEvent,
-      "error",
-      "Directory-assisted discovery failed"
-    );
-  }
-
-  return leads;
-}
-
-/* =========================================================
-   16. DEDUPLICATION
-========================================================= */
-
-function leadCompleteness(lead: SectorLead): number {
-  return Number(Boolean(lead.email)) + Number(Boolean(lead.phone)) + Number(Boolean(lead.location));
-}
-
-function deduplicateLeads(leads: SectorLead[]): SectorLead[] {
-  const byWebsite = new Map<string, SectorLead>();
-
-  for (const lead of leads) {
-    const key = normalizeDomainKey(lead.website);
-    if (!key) continue;
-
-    const existing = byWebsite.get(key);
-    if (!existing || leadCompleteness(lead) > leadCompleteness(existing)) {
-      byWebsite.set(key, lead);
-    }
-  }
-
-  return [...byWebsite.values()];
-}
-
-/* =========================================================
-   17. FINAL QUALITY GATE
-========================================================= */
-
-function finalQualityGate(lead: SectorLead): boolean {
-  if (!lead.sector || !lead.website || !isPotentialOfficialWebsite(lead.website)) return false;
- if (!lead.website || (!lead.email && !lead.phone)) {
-  return false;
-}
-  if (lead.location && !isPlausibleBusinessLocation(lead.location)) return false;
-
-  // Never allow a malformed email to reach the saved lead list.
-  if (lead.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(lead.email)) return false;
-
-  return true;
 }
 
 /* =========================================================
