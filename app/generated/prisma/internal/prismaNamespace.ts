@@ -397,7 +397,8 @@ type FieldRefInputType<Model, FieldType> = Model extends never ? never : FieldRe
 
 
 export const ModelName = {
-  Lead: 'Lead'
+  Lead: 'Lead',
+  ResearchDomain: 'ResearchDomain'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -413,7 +414,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "lead"
+    modelProps: "lead" | "researchDomain"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -491,6 +492,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    ResearchDomain: {
+      payload: Prisma.$ResearchDomainPayload<ExtArgs>
+      fields: Prisma.ResearchDomainFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.ResearchDomainFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ResearchDomainPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.ResearchDomainFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ResearchDomainPayload>
+        }
+        findFirst: {
+          args: Prisma.ResearchDomainFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ResearchDomainPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.ResearchDomainFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ResearchDomainPayload>
+        }
+        findMany: {
+          args: Prisma.ResearchDomainFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ResearchDomainPayload>[]
+        }
+        create: {
+          args: Prisma.ResearchDomainCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ResearchDomainPayload>
+        }
+        createMany: {
+          args: Prisma.ResearchDomainCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.ResearchDomainCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ResearchDomainPayload>[]
+        }
+        delete: {
+          args: Prisma.ResearchDomainDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ResearchDomainPayload>
+        }
+        update: {
+          args: Prisma.ResearchDomainUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ResearchDomainPayload>
+        }
+        deleteMany: {
+          args: Prisma.ResearchDomainDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.ResearchDomainUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.ResearchDomainUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ResearchDomainPayload>[]
+        }
+        upsert: {
+          args: Prisma.ResearchDomainUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$ResearchDomainPayload>
+        }
+        aggregate: {
+          args: Prisma.ResearchDomainAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregateResearchDomain>
+        }
+        groupBy: {
+          args: Prisma.ResearchDomainGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ResearchDomainGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.ResearchDomainCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.ResearchDomainCountAggregateOutputType> | number
+        }
+      }
+    }
   }
 } & {
   other: {
@@ -560,6 +635,15 @@ export const LeadScalarFieldEnum = {
 } as const
 
 export type LeadScalarFieldEnum = (typeof LeadScalarFieldEnum)[keyof typeof LeadScalarFieldEnum]
+
+
+export const ResearchDomainScalarFieldEnum = {
+  id: 'id',
+  domain: 'domain',
+  createdAt: 'createdAt'
+} as const
+
+export type ResearchDomainScalarFieldEnum = (typeof ResearchDomainScalarFieldEnum)[keyof typeof ResearchDomainScalarFieldEnum]
 
 
 export const SortOrder = {
@@ -806,6 +890,7 @@ export interface PrismaClientOptionsWithAdapter extends PrismaClientBaseOptions 
 export type PrismaClientOptions = PrismaClientOptionsWithAccelerateUrl | PrismaClientOptionsWithAdapter
 export type GlobalOmitConfig = {
   lead?: Prisma.LeadOmit
+  researchDomain?: Prisma.ResearchDomainOmit
 }
 
 /* Types for Logging */

@@ -6,6 +6,7 @@ import ResearchStatus, {
   ActivityItem,
   ResearchStats,
 } from "./ResearchStatus";
+import { addResearchCacheBulk } from "../../lib/research-cache";
 
 export default function ResearchPage() {
   const [loading, setLoading] = useState(false);
@@ -33,12 +34,29 @@ export default function ResearchPage() {
 
         if (!response.ok || cancelled) return;
 
+        /*
+         * PostgreSQL ResearchDomain is the permanent
+         * source of truth.
+         *
+         * Sync researched domains into LocalStorage so
+         * the browser can use them as a fast cache.
+         */
+        if (
+          Array.isArray(data.researchedDomains) &&
+          data.researchedDomains.length > 0
+        ) {
+          addResearchCacheBulk(data.researchedDomains);
+        }
+
         setStats((current) => ({
           ...current,
           totalLeads: Number(data.totalLeads ?? 0),
         }));
       } catch (error) {
-        console.error("Failed to load research stats:", error);
+        console.error(
+          "Failed to load research stats:",
+          error
+        );
       }
     }
 
@@ -84,12 +102,7 @@ export default function ResearchPage() {
     ]);
 
     /*
-     * IMPORTANT:
-     * Only successful "Found X new lead(s)" events increase
-     * the live database counter.
-     *
-     * The backend emits this event only after the lead has
-     * been successfully saved to PostgreSQL.
+     * Successful leads
      */
     if (
       activity.type === "success" &&
@@ -105,8 +118,30 @@ export default function ResearchPage() {
     }
 
     /*
-     * Rejected and skipped leads are intentionally kept only
-     * in frontend state. They are NOT stored in the database.
+     * Duplicate events
+     *
+     * research.ts emits a separate:
+     * "DUPLICATE → ..."
+     * info event before the actual skipped event.
+     *
+     * Count only this event so one duplicate is counted
+     * exactly once.
+     */
+    if (
+      activity.type === "info" &&
+      /^DUPLICATE →/i.test(message)
+    ) {
+      setStats((current) => ({
+        ...current,
+        duplicatesRemoved:
+          current.duplicatesRemoved + 1,
+      }));
+
+      return;
+    }
+
+    /*
+     * Rejected and skipped leads
      */
     if (
       activity.type === "warning" &&
@@ -124,7 +159,7 @@ export default function ResearchPage() {
           : current.rejected,
         duplicatesRemoved: isRejected
           ? current.duplicatesRemoved
-          : current.duplicatesRemoved + 1,
+          : current.duplicatesRemoved,
       }));
     }
   }
@@ -137,13 +172,6 @@ export default function ResearchPage() {
 
     setStats((current) => ({
       ...current,
-      /*
-       * Do not overwrite the live counter with an old value.
-       * The counter has already been updated lead-by-lead.
-       *
-       * If the API sends the final DB total, use it only as
-       * a final synchronization point.
-       */
       totalLeads:
         typeof data.totalLeads === "number"
           ? data.totalLeads

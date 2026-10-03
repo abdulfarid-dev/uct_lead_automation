@@ -2,6 +2,10 @@
 
 import { FormEvent, useState } from "react";
 import {
+  getResearchCache,
+  addResearchCache,
+} from "../../lib/research-cache";
+import {
   FileText,
   MapPin,
   Play,
@@ -9,15 +13,61 @@ import {
   Search,
 } from "lucide-react";
 
-const defaultPrompt =
-  "Find potential customers in India. Focus on manufacturing and factories, industrial plants and machinery-intensive businesses, warehouses and logistics companies, fleet and transportation businesses, energy and utilities, solar companies, oil and gas, mining, agriculture and smart farming, greenhouses, healthcare facilities and medical equipment operations, large buildings and smart infrastructure, and engineering or equipment companies that operate industrial assets. For each relevant company, find the company name, official website, business email address, phone number, and business location. Return only real businesses and use their official website for verification. Exclude directories, job portals, news websites, blogs, publishers, and lead-data websites.";
+const defaultPrompt = `Find potential B2B customers and relevant industrial/channel partners for UniConverge Technologies (UCT) in India.
+
+Prioritize real operating companies with a genuine business need or practical use case for UCT's Industrial IoT (IIoT), LoRaWAN, wireless monitoring, industrial automation, asset tracking, energy monitoring, predictive maintenance, telemetry, embedded systems, smart infrastructure, and related solutions.
+
+Research broadly across:
+- Industrial: manufacturing, factories, heavy engineering, automotive, auto components, machinery, industrial equipment, process industries, chemical, petrochemical, oil & gas, refineries, steel, cement, plastics, rubber, paper, glass, packaging, electronics, electrical manufacturing, pharmaceuticals and other asset-intensive plants.
+- Energy: solar, renewable energy, power generation, electricity/utilities, energy management, battery/BESS, EV and charging infrastructure, green hydrogen, bioenergy and waste-to-energy.
+- Infrastructure: smart cities, smart buildings, building automation, facility management, smart lighting, water treatment, wastewater and other infrastructure operators.
+- Operations & logistics: warehouses, logistics, 3PL, supply chain, distribution centers, fleet operators, transportation, shipping, ports, cold chain, cold storage and asset-heavy operations.
+- Technology & industrial partners: IoT, IIoT, industrial automation, embedded systems, electronics, telecom, system integrators, engineering companies, OEMs, ODMs, EPCs, industrial distributors and technology/channel partners.
+- Agriculture: smart farming, AgriTech, precision agriculture, irrigation, greenhouses, hydroponics, farm operations and agricultural infrastructure.
+- Healthcare: hospitals, healthcare facilities, medical infrastructure, medical equipment operations and diagnostic/laboratory facilities.
+
+Do not qualify a company only because a keyword appears on its website. Verify that its actual business, facilities, equipment, assets, operations or services create a plausible UCT use case.
+
+For every qualified company, find:
+1. Company name
+2. Official website
+3. Business email address
+4. Business phone number
+5. Business location
+
+Verification and quality rules:
+- Use the company's official website as the primary source for verification.
+- The official website is mandatory.
+- A valid business email OR business phone is sufficient for a qualified lead.
+- If neither email nor phone can be found, reject the company.
+- Prefer direct company contact details over third-party contact data.
+- Return real businesses only.
+- Avoid duplicate or previously researched companies/domains.
+- Do not invent, guess or fabricate contact details.
+
+Exclude:
+- Business directories and lead databases
+- Job portals and recruitment sites
+- News sites, blogs, publishers and market-research sites
+- Social-media-only pages
+- Government departments/agencies
+- Research institutes and industry associations
+- Generic marketing/SEO agencies and unrelated consultants
+- Companies with no official website
+- Companies with no business email and no business phone
+- Irrelevant businesses with no realistic UCT use case
+
+Return only companies that are genuinely relevant as potential UCT customers, industrial partners, system integrators, OEM/ODM partners, EPCs, distributors or technology/channel partners.`;
 
 const quickFilters = [
   "Manufacturing",
-  "Logistics",
-  "Solar",
+  "Industrial Plants",
+  "Solar & Renewable",
   "Oil & Gas",
+  "Energy & Utilities",
+  "Logistics & Fleet",
   "Agriculture",
+  "Healthcare",
 ];
 
 // Research target options
@@ -78,6 +128,7 @@ export default function ResearchForm({
         body: JSON.stringify({
           prompt: prompt.trim(),
           limit,
+          cachedWebsites: getResearchCache(),
         }),
       });
 
@@ -189,6 +240,34 @@ export default function ResearchForm({
                 message:
                   event.message,
               });
+
+              /*
+               * IMPORTANT:
+               * The research engine permanently marks a website as
+               * researched before verification/extraction.
+               *
+               * Save that domain in browser Local Storage immediately.
+               * This means the same domain will not enter the expensive
+               * research pipeline again from this browser.
+               */
+             if (
+                  event.type === "researched" &&
+                  /^Website permanently marked as researched:\s*/i.test(
+                    event.message
+                  )
+                ) {
+                const website =
+                  event.message
+                    .replace(
+                      /^Website permanently marked as researched:\s*/i,
+                      ""
+                    )
+                    .trim();
+
+                if (website) {
+                  addResearchCache(website);
+                }
+              }
             }
 
             if (
@@ -288,6 +367,7 @@ export default function ResearchForm({
           <button
             type="button"
             disabled={loading}
+            onClick={() => setPrompt(defaultPrompt)}
             className="rounded-lg border border-slate-700 bg-slate-950 px-3 py-2 text-xs font-medium text-slate-300 transition hover:border-slate-600 hover:text-white disabled:opacity-50"
           >
             Use Template
@@ -327,14 +407,16 @@ export default function ResearchForm({
                   type="button"
                   disabled={loading}
                   onClick={() => {
-                    setPrompt(
-                      (current) =>
-                        current.includes(
-                          filter
-                        )
-                          ? current
-                          : `${current}\nFocus additionally on ${filter} businesses.`
-                    );
+                    setPrompt((current) => {
+                      const normalizedCurrent = current.toLowerCase();
+                      const normalizedFilter = filter.toLowerCase();
+
+                      if (normalizedCurrent.includes(normalizedFilter)) {
+                        return current;
+                      }
+
+                      return `${current.trim()}\n\nFocus additionally on ${filter} businesses.`;
+                    });
                   }}
                   className="rounded-full border border-slate-700 bg-slate-950 px-3 py-1.5 text-[11px] font-medium text-slate-300 transition hover:border-blue-500/50 hover:bg-blue-500/10 hover:text-blue-300 disabled:opacity-50"
                 >

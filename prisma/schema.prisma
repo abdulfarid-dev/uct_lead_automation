@@ -65,3 +65,11 @@ model Lead {
   @@index([verificationStatus])
   @@index([emailMessageId])
 }
+
+model ResearchDomain {
+  id        Int      @id @default(autoincrement())
+  domain    String   @unique
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+}

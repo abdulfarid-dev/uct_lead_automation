@@ -51,7 +51,8 @@ export const AnyNull = runtime.AnyNull
 
 
 export const ModelName = {
-  Lead: 'Lead'
+  Lead: 'Lead',
+  ResearchDomain: 'ResearchDomain'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -100,6 +101,15 @@ export const LeadScalarFieldEnum = {
 } as const
 
 export type LeadScalarFieldEnum = (typeof LeadScalarFieldEnum)[keyof typeof LeadScalarFieldEnum]
+
+
+export const ResearchDomainScalarFieldEnum = {
+  id: 'id',
+  domain: 'domain',
+  createdAt: 'createdAt'
+} as const
+
+export type ResearchDomainScalarFieldEnum = (typeof ResearchDomainScalarFieldEnum)[keyof typeof ResearchDomainScalarFieldEnum]
 
 
 export const SortOrder = {

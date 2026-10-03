@@ -7,19 +7,33 @@ import {
 
 export async function GET() {
   try {
-    const totalLeads = await prisma.lead.count();
+    const [totalLeads, researchedDomains] = await Promise.all([
+      prisma.lead.count(),
+
+      prisma.researchDomain.findMany({
+        select: {
+          domain: true,
+        },
+        orderBy: {
+          createdAt: "asc",
+        },
+      }),
+    ]);
 
     return Response.json({
       success: true,
       totalLeads,
+      researchedDomains: researchedDomains.map(
+        (item) => item.domain
+      ),
     });
   } catch (error) {
-    console.error("Get lead count error:", error);
+    console.error("Get research data error:", error);
 
     return Response.json(
       {
         success: false,
-        error: "Could not load lead count.",
+        error: "Could not load research data.",
       },
       { status: 500 }
     );
@@ -50,6 +64,18 @@ export async function POST(request: Request) {
       );
     }
 
+    // Browser research cache
+    const cachedWebsites = Array.isArray(
+      body.cachedWebsites
+    )
+      ? body.cachedWebsites
+          .filter(
+            (value: unknown): value is string =>
+              typeof value === "string"
+          )
+          .slice(0, 5000)
+      : [];
+
     const job = createResearchJob({
       prompt: body.prompt,
     });
@@ -60,13 +86,23 @@ export async function POST(request: Request) {
       async start(controller) {
         const sendEvent = (data: unknown) => {
           controller.enqueue(
-            encoder.encode(`data: ${JSON.stringify(data)}\n\n`)
+            encoder.encode(
+              `data: ${JSON.stringify(data)}\n\n`
+            )
           );
         };
 
         try {
           const leads = await runResearch(job, {
             limit: Math.floor(limit),
+
+            // Browser cache is only a fast optimization.
+            // PostgreSQL ResearchDomain remains the permanent source
+            // of truth inside research.ts.
+            excludedWebsites: new Set(
+              cachedWebsites
+            ),
+
             onEvent: (event) => {
               sendEvent({
                 type: "activity",
@@ -75,7 +111,8 @@ export async function POST(request: Request) {
             },
           });
 
-          const totalLeads = await prisma.lead.count();
+          const totalLeads =
+            await prisma.lead.count();
 
           sendEvent({
             type: "complete",
@@ -89,11 +126,15 @@ export async function POST(request: Request) {
 
           controller.close();
         } catch (error) {
-          console.error("Research API error:", error);
+          console.error(
+            "Research API error:",
+            error
+          );
 
           sendEvent({
             type: "error",
-            message: "Research could not be completed.",
+            message:
+              "Research could not be completed.",
           });
 
           controller.close();
@@ -109,7 +150,10 @@ export async function POST(request: Request) {
       },
     });
   } catch (error) {
-    console.error("Research request error:", error);
+    console.error(
+      "Research request error:",
+      error
+    );
 
     return Response.json(
       {
