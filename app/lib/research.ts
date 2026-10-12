@@ -2198,12 +2198,12 @@ For solar research, verify that the company itself owns, operates, develops, ins
 
 If the company identity or business activity is uncertain, return no company data.
 
-CONTACT REQUIREMENT — BOTH ARE MANDATORY:
-You MUST actively search the official website's contact, about, locations, office, support and footer information for BOTH:
-1. a real business email address
-2. a real business phone number
+CONTACT REQUIREMENT — WEBSITE AND EMAIL ARE MANDATORY; PHONE IS OPTIONAL:
+You MUST actively search the official website's contact, about, locations, office, support and footer information for:
+1. a real business email address (MANDATORY)
+2. a real business phone number (OPTIONAL, but search for it when possible).
 
-Do not stop after finding only one.
+Do not reject an otherwise valid company only because its phone number is unavailable.
 
 Use only contact details belonging to the company that owns this official domain.
 
@@ -2217,7 +2217,7 @@ Do NOT use:
 
 If an email is missing from the homepage, check official contact/about/location pages.
 If a phone number is missing from the homepage, check official contact/about/location/footer pages.
-If either email OR phone cannot be verified from the company's own official website, return no company data.
+If the business email cannot be verified from the company's own official website, return no company data. Phone may be empty.
 
 EXTRACT:
 - actual company/brand name
@@ -2310,8 +2310,8 @@ NEVER convert uncertainty into a lead.
       }
     }
 
-    // Third pass: explicitly extract the official contact pages again
-    // through Tavily when one of the two mandatory contacts is still missing.
+    // Third pass: explicitly extract official contact pages again through Tavily
+    // whenever the mandatory email or optional phone is still missing.
     if (!email || !phone) {
       const contactPages = [
         ...getCompanyPages(website),
@@ -2327,15 +2327,15 @@ NEVER convert uncertainty into a lead.
 
 Return factual contact information belonging to the company that owns this website.
 
-Find BOTH:
-- business email address
-- business phone number
+Find:
+- business email address (MANDATORY)
+- business phone number (OPTIONAL)
 
 Search the homepage, contact page, about page, office/location page and footer.
 
 Do not use author, journalist, partner, customer, directory or third-party contact details.
 
-If either contact cannot be verified from this official domain, do not invent it.`
+If the email cannot be verified from this official domain, do not invent it. Phone may be empty.`
       );
 
       const contactResults = Array.isArray(contactData?.results)
@@ -2361,11 +2361,13 @@ If either contact cannot be verified from this official domain, do not invent it
     const location = extractLocation(websiteText);
     // Website + Email OR Website + Phone = valid lead.
 // Website without either contact method = reject.
-if (!website || (!email && !phone)) {
+if (!website || !email) {
   emitLeadRejected(
     onEvent,
     website,
-    "website required and either business email or phone must be found"
+    !website
+      ? "official website missing"
+      : "business email missing"
   );
   return null;
 }
@@ -2375,17 +2377,6 @@ if (!website || (!email && !phone)) {
         onEvent,
         website,
         "invalid business location"
-      );
-      return null;
-    }
-
-    // Website + Email OR Website + Phone = valid lead.
-    // We actively search for both, but only one verified contact is required.
-    if (!website || (!email && !phone)) {
-      emitLeadRejected(
-        onEvent,
-        website,
-        "website required and either business email or phone must be found"
       );
       return null;
     }
@@ -2465,9 +2456,10 @@ function finalQualityGate(lead: SectorLead): boolean {
   }
 
   // At least one verified business contact is required.
-  if (!lead.email && !lead.phone) {
-    return false;
-  }
+  
+if (!lead.email) {
+  return false;
+}
 
   if (lead.location && !isPlausibleBusinessLocation(lead.location)) {
     return false;
@@ -3293,6 +3285,137 @@ export async function runResearch(
           );
         }
       }
+    }
+  }
+
+  /*
+   * Target completion pass:
+   * Keep discovering with fresh query wording while the selected target is
+   * unmet. Preserve all existing domain-memory, cache and dedupe safeguards.
+   * Stop when the target is reached or a complete wave cannot discover any
+   * new domains, avoiding an infinite loop when the API/results cannot progress.
+   */
+  if (newLeadCount.value < limit) {
+    const requestedLocation = extractRequestedLocation(job.prompt);
+    const locationSuffix = requestedLocation ? ` in ${requestedLocation}` : "";
+    const waveThemes = [
+      "official company contact email",
+      "manufacturer corporate website contact",
+      "industrial operator official contact us",
+      "company about us email address",
+      "factory plant corporate contact details",
+      "business official domain sales email",
+      "industrial facility company website",
+      "company headquarters contact email",
+      "production facility official website contact",
+      "corporate office email official site",
+      "industrial business contact page",
+      "company locations official website",
+    ];
+    const waveIndustries = [
+      "manufacturing engineering machinery",
+      "energy utilities renewable power",
+      "warehouse logistics cold chain fleet",
+      "food beverage pharma chemical processing",
+      "water wastewater infrastructure",
+      "agriculture irrigation greenhouse",
+      "healthcare hospital medical facilities",
+      "automotive electronics battery components",
+      "mining metals cement steel materials",
+      "industrial automation equipment operators",
+    ];
+
+    let wave = 0;
+    while (newLeadCount.value < limit) {
+      const domainsBeforeWave = options.runSeenWebsites?.size ?? 0;
+      emitResearchEvent(
+        options.onEvent,
+        "info",
+        `[V10] Continuing discovery wave ${wave + 1} (${newLeadCount.value}/${limit})`
+      );
+
+      let waveHadSearchError = false;
+      for (let index = 0; index < waveThemes.length && newLeadCount.value < limit; index++) {
+        const industry = waveIndustries[(wave + index) % waveIndustries.length];
+        const theme = waveThemes[(wave + index) % waveThemes.length];
+        const query = `${industry}${locationSuffix} ${theme} ${wave % 2 === 0 ? "business" : "company"} ${wave + 1}`;
+        emitResearchEvent(options.onEvent, "search", `Continuing search: ${query}`);
+
+        try {
+          const data = await tavilySearch(query, MAX_SEARCH_RESULTS, {
+            excludeDomains: buildDynamicSearchExclusions(
+              knownLeadKeys,
+              options.excludedWebsites
+            ),
+          });
+          const results = Array.isArray(data?.results) ? data.results : [];
+
+          for (const result of results) {
+            if (newLeadCount.value >= limit) break;
+            const website = getOrigin(String(result?.url || ""));
+            if (!website || !isPotentialOfficialWebsite(website)) continue;
+
+            const normalizedWebsite = normalizeDomainKey(website);
+            if (isExcludedWebsite(website, options.excludedWebsites)) continue;
+
+            if (knownLeadKeys.websites.has(normalizedWebsite)) {
+              await markWebsiteResearched(website, options);
+              continue;
+            }
+
+            if (!(await markWebsiteResearched(website, options))) continue;
+
+            emitResearchEvent(
+              options.onEvent,
+              "check",
+              `Verifying official website: ${website}`
+            );
+            const lead = await extractVerifiedCompany(
+              website,
+              job.prompt,
+              undefined,
+              options.onEvent
+            );
+            if (!lead || isKnownLead(lead, knownLeadKeys)) continue;
+
+            const savedImmediately = await saveVerifiedLeadImmediately(
+              lead,
+              options.onEvent,
+              website
+            );
+            if (!savedImmediately) continue;
+
+            leads.push(lead);
+            registerLeadKeys(lead, knownLeadKeys);
+            newLeadCount.value += 1;
+            emitResearchEvent(
+              options.onEvent,
+              "success",
+              `Found ${newLeadCount.value} new lead${newLeadCount.value === 1 ? "" : "s"}: ${website}`
+            );
+          }
+        } catch (error) {
+          waveHadSearchError = true;
+          console.error(`Continuation discovery failed for "${query}":`, error);
+          emitResearchEvent(options.onEvent, "error", `Search failed: ${query}`);
+        }
+      }
+
+      if (newLeadCount.value >= limit) break;
+
+      const domainsAfterWave = options.runSeenWebsites?.size ?? 0;
+      if (domainsAfterWave <= domainsBeforeWave) {
+        emitResearchEvent(
+          options.onEvent,
+          "error",
+          waveHadSearchError
+            ? `Research stopped at ${newLeadCount.value}/${limit}: search/API errors prevented further discovery.`
+            : `Research stopped at ${newLeadCount.value}/${limit}: no new eligible domains found in the latest wave.`
+        );
+        break;
+      }
+
+      wave += 1;
     }
   }
 
